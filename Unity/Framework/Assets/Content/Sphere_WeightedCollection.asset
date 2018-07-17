@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1b452c89b327224e8d9b2578f4ad393, type: 3}
+  m_Name: Sphere_WeightedCollection
+  m_EditorClassIdentifier: 
+  _elements:
+  - _name: Weighted Gameobjects
+    _weightedArray:
+      _objects:
+      - Object: {fileID: 1480393257502300, guid: 1d22bc580c62e7444ac61d9bb9ec5607,
+          type: 2}
+        Weight: 1
+      _totalWeight: 1
+      _allowNull: 0
