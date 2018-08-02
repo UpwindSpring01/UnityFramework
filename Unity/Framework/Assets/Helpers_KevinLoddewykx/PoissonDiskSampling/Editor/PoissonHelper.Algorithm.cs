@@ -25,12 +25,14 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         private Collider[] _collidersOverlapHelper = null;
 
         private int _samples = 0;
+        private int _currNestingLevel = 0;
+        private int _maxNestingLevel = 0;
 
         public void CleanupPlacedObjects(int start)
         {
-            for (int i = start; i <= _editorData.PlacedObjects.Count - 1; ++i)
+            for (int i = start; i <= EditorData.PlacedObjects.Count - 1; ++i)
             {
-                foreach (GameObject gameObject in _editorData.PlacedObjects[i])
+                foreach (GameObject gameObject in EditorData.PlacedObjects[i])
                 {
                     if (gameObject)
                     {
@@ -38,23 +40,23 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                         if (placer != null)
                         {
                             PoissonHelperInternalStorage.Instance.Remove(placer);
-                            placer.EditorData.DestroyVisual();
+                            placer.EditorData.DestroyVisual(ModeData);
                         }
                         Object.DestroyImmediate(gameObject);
                     }
                 }
-                _editorData.PlacedObjects[i].Clear();
+                EditorData.PlacedObjects[i].Clear();
             }
 
-            if (_isPlacer)
+            if (!DataHolder.IsWindow)
             {
-                PoissonPlacer placer = (PoissonPlacer)_object;
+                PoissonPlacer placer = (PoissonPlacer)DataHolder;
                 // First child is Visual Helper, skip it
                 ++start;
                 int i = start;
                 while (placer.transform.childCount > start)
                 {
-                    if (_editorData.Grids.Count < i + 1 || !_editorData.Grids[i].ReadOnly)
+                    if (EditorData.Grids.Count < i + 1 || !EditorData.Grids[i].ReadOnly)
                     {
                         Object.DestroyImmediate(placer.transform.GetChild(start).gameObject);
                     }
@@ -67,10 +69,10 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         {
             for (int i = 0; i <= end; ++i)
             {
-                _editorData.PlacedObjects[i].Clear();
-                _editorData.Grids[i].ReadOnly = true;
+                EditorData.PlacedObjects[i].Clear();
+                EditorData.Grids[i].ReadOnly = true;
             }
-            _editorData.UpdateAllowVisualTransformChanges();
+            EditorData.UpdateAllowVisualTransformChanges();
             SceneView.RepaintAll();
         }
 
@@ -137,9 +139,9 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             {
                 for (int i = 0; i < _activeLevel; ++i)
                 {
-                    StoredGrid grid = _editorData.Grids[i];
+                    StoredGrid grid = EditorData.Grids[i];
                     bool unused;
-                    if (InNeighbourhood(grid, loc, Mathf.Max(_data[i].DistToKeepNextLevel * _data[i].DistToKeepNextLevel, finalMinDistSqrd), out unused))
+                    if (InNeighbourhood(grid, loc, Mathf.Max(Data[i].DistToKeepNextLevel * Data[i].DistToKeepNextLevel, finalMinDistSqrd), out unused))
                     {
                         // Object found
                         return true;
@@ -253,7 +255,6 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
             if (InBounds(loc))
             {
-
                 bool toCloseToProcess = true;
                 // Don't do InNeighbourhood for clumping algorithm
                 if (finalMinDistSqrd <= 0 || (!InNeighbourhood(loc, finalMinDistSqrd, out toCloseToProcess) && !InInnerBounds(loc)))
@@ -280,9 +281,9 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                                     Bounds bounds;
                                     if (GetBounds(newObject, _activeData.BoundsMode, pos, rot, scale, out bounds))
                                     {
-                                        if (_modeData.Mode == DistributionMode.Surface)
+                                        if (ModeData.Mode == DistributionMode.Surface)
                                         {
-                                            _modeData.SurfaceMeshFilter.gameObject.SetActive(false);
+                                            ModeData.SurfaceMeshFilter.gameObject.SetActive(false);
                                         }
 
                                         bool hasOverlap = true;
@@ -295,9 +296,9 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                                         {
                                             hasOverlap = CheckBoxOverlap(bounds, rot, correctedMask);
                                         }
-                                        if (_modeData.Mode == DistributionMode.Surface)
+                                        if (ModeData.Mode == DistributionMode.Surface)
                                         {
-                                            _modeData.SurfaceMeshFilter.gameObject.SetActive(true);
+                                            ModeData.SurfaceMeshFilter.gameObject.SetActive(true);
                                         }
                                         if (hasOverlap)
                                         {
@@ -318,29 +319,34 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
                             obj.SetActive(false);
                             obj.SetActive(true);
-                            if (_isPlacer)
+                            if (!DataHolder.IsWindow)
                             {
-                                obj.transform.parent = ((PoissonPlacer)_object).transform.GetChild(_activeLevel + 1);
+                                obj.transform.parent = ((PoissonPlacer)DataHolder).transform.GetChild(_activeLevel + 1);
                             }
                             else
                             {
                                 obj.transform.parent = options.Parent;
                             }
-                            _editorData.PlacedObjects[_activeLevel].Add(obj);
+                            EditorData.PlacedObjects[_activeLevel].Add(obj);
 
-                            PoissonPlacer placer = obj.GetComponent<PoissonPlacer>();
-                            if (placer != null)
+                            if (_currNestingLevel < _maxNestingLevel)
                             {
-                                PoissonHelper helper = new PoissonHelper(placer, placer.ModeData, placer.Data, placer.EditorData, null);
-                                helper.Init();
-                                bool isValidSurface, preValid, currValid, postValid;
-                                int highestValid;
-                                helper.ValidateSettings(false, out isValidSurface, out preValid, out currValid, out postValid, out highestValid);
-
-                                placer.EditorData.LastFrameValid = isValidSurface && preValid && currValid && postValid;
-                                if (highestValid >= 0)
+                                PoissonPlacer placer = obj.GetComponent<PoissonPlacer>();
+                                if (placer != null && placer.enabled)
                                 {
-                                    helper.DistributePoisson(0, highestValid, preview);
+                                    PoissonHelper helper = new PoissonHelper(placer);
+                                    helper.Init();
+                                    bool isValidSurface, preValid, currValid, postValid;
+                                    int highestValid;
+                                    helper.LoadDataHolder();
+                                    helper.ValidateSettings(false, out isValidSurface, out preValid, out currValid, out postValid, out highestValid);
+
+                                    placer.EditorData.LastFrameValid = isValidSurface && preValid && currValid && postValid;
+                                    if (highestValid >= 0)
+                                    {
+                                        helper.DistributePoisson(0, highestValid, preview, _currNestingLevel + 1, _maxNestingLevel);
+                                    }
+                                    helper.StoreDataHolder();
                                 }
                             }
                         }
@@ -351,7 +357,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             return false;
         }
 
-        private void GenerateRock(Vector2 loc, float minDistSqrd, List<Vector2> processList, bool preview)
+        private void GenerateObject(Vector2 loc, float minDistSqrd, List<Vector2> processList, bool preview)
         {
             bool objectPlaced;
             if (CreateRandomObjectAtLoc(loc, minDistSqrd, out objectPlaced, _activeData.PoissonObjects.Element.WeightedArray, _activeData.PoissonObjectOptions, preview))
@@ -381,10 +387,10 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             }
         }
 
-        private void DistributionInit()
+        private void DistributionInit(int maxNesting)
         {
-            _activeGrid = _editorData.Grids[_activeLevel];
-            _activeData = _data[_activeLevel];
+            _activeGrid = EditorData.Grids[_activeLevel];
+            _activeData = Data[_activeLevel];
 
             if (_activeData.SphereCollisionCheck || _activeData.BoxCollisionCheck)
             {
@@ -419,30 +425,36 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             _activeGrid.GridWidth = Mathf.CeilToInt(_surfaceBounds.size.x * cellSize);
             _activeGrid.GridDepth = Mathf.CeilToInt(_surfaceBounds.size.z * cellSize);
             _activeGrid.Grid2D = new Vector2List[_activeGrid.GridWidth * _activeGrid.GridDepth];
+
+            if(maxNesting == -1)
+            {
+                _maxNestingLevel = _activeData.MaxSubPlacersNesting;
+            }
         }
 
-        private void DistributePoisson(int start, int end, bool preview)
+        private void DistributePoisson(int start, int end, bool preview, int currNesting = 0, int maxNesting = -1)
         {
-            if (_isPlacer && _editorData.HelperVisual != null)
+            if (!DataHolder.IsWindow && EditorData.HelperVisual != null)
             {
-                _editorData.HelperVisual.transform.SetAsFirstSibling();
+                EditorData.HelperVisual.transform.SetAsFirstSibling();
             }
 
             CleanupPlacedObjects(start);
+            _currNestingLevel = currNesting;
 
             for (_activeLevel = start; _activeLevel <= end; ++_activeLevel)
             {
-                if (_isPlacer)
+                if (!DataHolder.IsWindow)
                 {
                     GameObject obj = new GameObject("Level " + _activeLevel);
-                    obj.transform.parent = ((PoissonPlacer)_object).transform;
+                    obj.transform.parent = ((PoissonPlacer)DataHolder).transform;
                 }
-                if (_editorData.Grids[_activeLevel].ReadOnly)
+                if (EditorData.Grids[_activeLevel].ReadOnly)
                 {
                     continue;
                 }
 
-                DistributionInit();
+                DistributionInit(maxNesting);
 
                 _samples = 0;
                 int maxSamples = (preview) ? _activeData.MaxSamplesPreview : _activeData.MaxSamples;
@@ -451,7 +463,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
                 Vector2 startLoc = GenerateStartPoint();
                 float finalMinDist = GetFinalMinDistance(startLoc);
-                GenerateRock(startLoc, finalMinDist, processList, preview);
+                GenerateObject(startLoc, finalMinDist, processList, preview);
 
                 while (processList.Count > 0 && (maxSamples <= 0 || _samples < maxSamples))
                 {
@@ -462,12 +474,12 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     for (int i = 0; i < _activeData.Samples; ++i)
                     {
                         Vector2 newPoint = GenerateRandomPointAround(currPoint, out finalMinDist);
-                        GenerateRock(newPoint, finalMinDist * finalMinDist, processList, preview);
+                        GenerateObject(newPoint, finalMinDist * finalMinDist, processList, preview);
                     }
                 }
             }
 
-            _editorData.HighestDistributedLevel = end;
+            EditorData.HighestDistributedLevel = end;
         }
     }
 }

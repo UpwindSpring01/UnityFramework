@@ -7,73 +7,112 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
     [System.Serializable]
     public partial class PoissonHelper
     {
-        private readonly PoissonModeData _modeData;
-        private readonly List<PoissonData> _data;
-        private readonly PoissonInternalEditorData _editorData;
+        private List<PoissonData> Data { get; set; }
 
-        private Object _object;
-        private EditorWindow _window;
+        public IPoissonDataHolder DataHolder { get; private set; }
 
-        private readonly bool _isPlacer;
-        private readonly bool _isPrefab;
+        private bool IsPrefab { get; }
 
-        public PoissonHelper(Object obj, PoissonModeData modeData, List<PoissonData> data, PoissonInternalEditorData editorData, EditorWindow window)
+        public PoissonInternalEditorData EditorData { get; }
+        public PoissonModeData ModeData { get; private set; }
+
+        public PoissonUIData UIData { get; private set; }
+
+        public PoissonData SelectedData { get; private set; }
+
+
+        public PoissonHelper(IPoissonDataHolder dataHolder)
         {
-            _object = obj;
-            _modeData = modeData;
-            _data = data;
-            _editorData = editorData;
-            _window = window;
+            DataHolder = dataHolder;
+            EditorData = dataHolder.EditorData;
 
-            _selectedData = _data[_editorData.SelectedLevelIndex];
-            _isPlacer = _object is PoissonPlacer;
-            _isPrefab = _isPlacer && (PrefabUtility.GetPrefabType(_object) == PrefabType.Prefab);
+            IsPrefab = !DataHolder.IsWindow && (PrefabUtility.GetPrefabType((Object)dataHolder) == PrefabType.Prefab);
         }
 
         public void Init()
         {
-            if (!_isPrefab)
+            if (!IsPrefab)
             {
-                PoissonHelperInternalStorage.Instance.RemoveAndAdd(_object, this);
-                
-                _editorData.InitVisual(_modeData, _selectedData, (_isPlacer) ? ((PoissonPlacer)_object).transform : null);
+                PoissonHelperInternalStorage.Instance.RemoveAndAdd(DataHolder, this);
+
+                EditorData.InitVisual(DataHolder.ModeData, DataHolder.Data[DataHolder.UIData.SelectedLevelIndex], (DataHolder.IsWindow) ? null : (PoissonPlacer)DataHolder);
             }
         }
 
         public void ShutDown()
         {
-            if (!_isPrefab)
+            if (!IsPrefab)
             {
-
-                PoissonHelperInternalStorage.Instance.Remove(_object);
-                _editorData.DestroyVisual();
+                PoissonHelperInternalStorage.Instance.Remove(DataHolder);
+                EditorData.DestroyVisual(DataHolder.ModeData);
             }
+        }
+
+        public void StopUndoRedoTracking()
+        {
+            PoissonHelperInternalStorage.Instance.RemoveUndoRedoTracking(DataHolder);
         }
 
         public void OnSceneGUI(SceneView sceneView)
         {
-            if(!_editorData.HelperVisual)
+            if (!EditorData.HelperVisual)
             {
-                PoissonHelperInternalStorage.Instance.Remove(_object);
+                PoissonHelperInternalStorage.Instance.Remove(DataHolder);
                 return;
             }
-            if (_modeData.Mode != DistributionMode.Surface && _editorData.HelperVisual.transform.hasChanged)
+            if (!IsPrefab && EditorData.HelperVisual.transform.hasChanged)
             {
-                if (_modeData.RealtimePreview)
-                {
-                    bool isValidSurface, preValid, currValid, postValid;
-                    int highestValid;
-                    ValidateSettings(false, out isValidSurface, out preValid, out currValid, out postValid, out highestValid);
+                LoadDataHolder();
 
-                    _editorData.LastFrameValid = isValidSurface && preValid && currValid && postValid;
-                    if (_editorData.LastFrameValid)
+                ModeData.Position = EditorData.HelperVisual.transform.localPosition;
+                ModeData.Rotation = EditorData.HelperVisual.transform.localRotation;
+                ModeData.Scale = EditorData.HelperVisual.transform.localScale;
+
+                if (DataHolder.ModeData.Mode != DistributionMode.Surface)
+                {
+                    DistributeRealtime();
+                    if (DataHolder.IsWindow)
                     {
-                        DistributePoisson(0, highestValid, true);
+                        ((EditorWindow)DataHolder).Repaint();
                     }
-                    _editorData.HelperVisual.transform.hasChanged = false;
                 }
-                _window?.Repaint();
+                EditorData.HelperVisual.transform.hasChanged = false;
+
+                Undo.RecordObject((Object)DataHolder, "PDS Param");
+                StoreDataHolder();
+                DataHolder.VisualTransformChanged();
             }
+        }
+
+        private void DistributeRealtime()
+        {
+            if (ModeData.RealtimePreview)
+            {
+                bool isValidSurface, preValid, currValid, postValid;
+                int highestValid;
+                ValidateSettings(false, out isValidSurface, out preValid, out currValid, out postValid, out highestValid);
+
+                EditorData.LastFrameValid = isValidSurface && preValid && currValid && postValid;
+                if (EditorData.LastFrameValid)
+                {
+                    DistributePoisson(0, highestValid, true);
+                }
+            }
+        }
+
+        public void OnUndoRedoPerformedPlacer()
+        {
+            if (EditorData.HelperVisual)
+            {
+                RefreshDistribution();
+            }
+        }
+
+        public void RefreshDistribution()
+        {
+            LoadDataHolder();
+            EditorData.RefreshVisual(ModeData, SelectedData);
+            DistributeRealtime();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Helpers_KevinLoddewykx.PoissonDiskSampling
@@ -87,13 +88,6 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         * Visual
         * *****************/
         [SerializeField]
-        public Vector3 Position = Vector3.zero;
-        [SerializeField]
-        public Quaternion Rotation = Quaternion.identity;
-        [SerializeField]
-        public Vector3 Scale = Vector3.one;
-
-        [SerializeField]
         public GameObject HelperVisual = null;
 
         [SerializeField]
@@ -105,6 +99,8 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         public MeshRenderer Renderer;
         [SerializeField]
         public MeshFilter MeshFilter;
+        [SerializeField]
+        public PoissonDeleteHelper DeleteHelper;
 
         [SerializeField]
         public Mesh BoxMesh;
@@ -114,31 +110,6 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         public Mesh PlaneMesh;
         [SerializeField]
         public Mesh EllipseMesh;
-        /*******************
-        * UI
-        * *****************/
-        [SerializeField]
-        public int PoissonSelected = 0;
-        [SerializeField]
-        public int ClumpSelected = 0;
-
-        [SerializeField]
-        public bool DuplicateLevel = false;
-        [SerializeField]
-        public int InsertLevelAt = 1;
-        [SerializeField]
-        public int SelectedLevelIndex = 0;
-
-        // Foldouts
-        [SerializeField]
-        public bool LevelCategory = true;
-        [SerializeField]
-        public bool GeneralCategory = true;
-        [SerializeField]
-        public bool ModeCategory = true;
-        [SerializeField]
-        public bool PoissonCategory = true;
-        [SerializeField]
-        public bool ClumpCategory = false;
     }
 }
+#endif

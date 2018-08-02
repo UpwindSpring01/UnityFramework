@@ -15,7 +15,7 @@ MonoBehaviour:
   - _name: Weighted Gameobjects (Allow Empty)
     _weightedArray:
       _objects:
-      - Object: {fileID: 1231611674559872, guid: f1e263887c597f4468bc23713c12911e,
+      - Object: {fileID: 1618051128781548, guid: 0b92425ebc9344e4e9af38a9e12486d7,
           type: 2}
         Weight: 1
       - Object: {fileID: 1480393257502300, guid: 1d22bc580c62e7444ac61d9bb9ec5607,

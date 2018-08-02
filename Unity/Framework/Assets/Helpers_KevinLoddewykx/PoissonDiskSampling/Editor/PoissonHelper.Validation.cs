@@ -7,15 +7,15 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 {
     public partial class PoissonHelper
     {
-        private bool GetBounds(GameObject obj, EBoundsMode boundsMode, Vector3 position, Quaternion rotation, Vector3 scale, out Bounds bounds)
+        private static bool GetBounds(GameObject obj, EBoundsMode boundsMode, Vector3 position, Quaternion rotation, Vector3 scale, out Bounds bounds)
         {
             PoissonPlacer placer = obj.GetComponent<PoissonPlacer>();
             if (placer != null)
             {
-                Vector3 placerScale = placer.EditorData.Scale;
+                Vector3 placerScale = placer.ModeData.Scale;
                 placerScale.y = 0.5f;
 
-                Matrix4x4 placerMat = Matrix4x4.TRS(placer.EditorData.Position, placer.EditorData.Rotation, placerScale);
+                Matrix4x4 placerMat = Matrix4x4.TRS(placer.ModeData.Position, placer.ModeData.Rotation, placerScale);
                 Matrix4x4 parentMat = Matrix4x4.TRS(position, rotation, scale);
 
                 Matrix4x4 finalMat = parentMat * placerMat;
@@ -55,7 +55,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             return bounds;
         }
 
-        private bool CalculateUnscaledBounds(GameObject obj, EBoundsMode boundsMode, Vector3 position, Quaternion rotation, Vector3 scale, out Bounds bounds)
+        private static bool CalculateUnscaledBounds(GameObject obj, EBoundsMode boundsMode, Vector3 position, Quaternion rotation, Vector3 scale, out Bounds bounds)
         {
             Vector3 tempPos = obj.transform.localPosition;
             Quaternion tempRot = obj.transform.localRotation;
@@ -68,10 +68,10 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             switch (boundsMode)
             {
                 case EBoundsMode.Renderer:
-                    result = CalculateUnscaledBoundsRenderer(obj, out bounds);
+                    result = CalculateBoundsRenderer(obj, out bounds);
                     break;
                 case EBoundsMode.Collider:
-                    result = CalculateUnscaledBoundsCollider(obj, out bounds);
+                    result = CalculateBoundsColliderInstantiate(obj, out bounds);
                     break;
                 default:
                     bounds = new Bounds();
@@ -85,7 +85,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             return result;
         }
 
-        private bool CalculateUnscaledBoundsRenderer(GameObject obj, out Bounds bounds)
+        private static bool CalculateBoundsRenderer(GameObject obj, out Bounds bounds)
         {
             Renderer[] components = obj.GetComponentsInChildren<Renderer>();
             bool hasBounds = false;
@@ -107,10 +107,18 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             return hasBounds;
         }
 
-        private bool CalculateUnscaledBoundsCollider(GameObject obj, out Bounds bounds)
+        private static bool CalculateBoundsColliderInstantiate(GameObject obj, out Bounds bounds)
         {
             GameObject tempObj = Object.Instantiate(obj);
-            Collider[] components = tempObj.GetComponentsInChildren<Collider>();
+            bool hasBounds = CalculateBoundsCollider(tempObj, out bounds);
+            Object.DestroyImmediate(tempObj);
+
+            return hasBounds;
+        }
+
+        private static bool CalculateBoundsCollider(GameObject obj, out Bounds bounds)
+        {
+            Collider[] components = obj.GetComponentsInChildren<Collider>();
 
             bool hasBounds = false;
             bounds = new Bounds();
@@ -127,26 +135,24 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     bounds.Encapsulate(comp.bounds);
                 }
             }
-            Object.DestroyImmediate(tempObj);
-
             return hasBounds;
         }
 
         private bool ValidateSurfaceBounds(bool showErrors)
         {
-            switch (_modeData.Mode)
+            switch (ModeData.Mode)
             {
                 case DistributionMode.Surface:
-                    if (_modeData.SurfaceMeshFilter != null)
+                    if (ModeData.SurfaceMeshFilter != null)
                     {
-                        PrefabType prefabType = PrefabUtility.GetPrefabType(_modeData.SurfaceMeshFilter.gameObject);
+                        PrefabType prefabType = PrefabUtility.GetPrefabType(ModeData.SurfaceMeshFilter.gameObject);
                         if (prefabType == PrefabType.Prefab || prefabType == PrefabType.ModelPrefab)
                         {
                             LogError(showErrors, "Mode -> Surface: surface object needs to be part of the scene.");
                             return false;
                         }
 
-                        _surfaceColliders = _modeData.SurfaceMeshFilter.GetComponents<Collider>() ?? null;
+                        _surfaceColliders = ModeData.SurfaceMeshFilter.GetComponents<Collider>() ?? null;
                         if (!_surfaceColliders.Any())
                         {
                             LogError(showErrors, "Mode -> Surface: surface object requires a collider component.");
@@ -160,18 +166,18 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                             return false;
                         }
 
-                        _surfaceBounds = _modeData.SurfaceMeshFilter.GetComponent<Renderer>().bounds;
+                        CalculateBoundsCollider(ModeData.SurfaceMeshFilter.gameObject, out _surfaceBounds);
                         if (_surfaceBounds.extents.x == 0 || _surfaceBounds.extents.z == 0)
                         {
                             LogError(showErrors, "Mode -> Surface: and/or Z bounds are zero.");
                             return false;
                         }
 
-                        if (!_editorData.Grids[0].ReadOnly)
+                        if (!EditorData.Grids[0].ReadOnly)
                         {
-                            foreach (List<GameObject> placedObjects in _editorData.PlacedObjects)
+                            foreach (List<GameObject> placedObjects in EditorData.PlacedObjects)
                             {
-                                if (placedObjects.Contains(_modeData.SurfaceMeshFilter.gameObject))
+                                if (placedObjects.Contains(ModeData.SurfaceMeshFilter.gameObject))
                                 {
                                     LogError(showErrors, "Mode -> Surface: can not use an active generated gameobject as surface.");
                                     return false;
@@ -185,27 +191,27 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 case DistributionMode.ProjectionRect:
                 case DistributionMode.ProjectionEllipse:
                     {
-                        Vector3 scale = _editorData.HelperVisual.transform.localScale;
+                        Vector3 scale = EditorData.HelperVisual.transform.localScale;
                         if (scale.x == 0 || scale.y == 0 || scale.z == 0)
                         {
                             LogError(showErrors, "Mode -> Scale: contains a scale of 0 or a parent gameobject.");
                             return false;
                         }
 
-                        _surfaceBounds.size = CalculateBoundsFromMatrix(_editorData.HelperVisual.transform.localToWorldMatrix).size;
+                        _surfaceBounds.size = CalculateBoundsFromMatrix(EditorData.HelperVisual.transform.localToWorldMatrix).size;
                         return true;
                     }
                 case DistributionMode.Plane:
                 case DistributionMode.Ellipse:
                     {
-                        Vector3 scale = _editorData.HelperVisual.transform.lossyScale;
+                        Vector3 scale = EditorData.HelperVisual.transform.lossyScale;
                         if (scale.x == 0 || scale.z == 0)
                         {
                             LogError(showErrors, "Mode -> Scale: contains a scale of 0 or a parent gameobject.");
                             return false;
                         }
 
-                        Matrix4x4 finalMat = Matrix4x4.Scale(new Vector3(1, 0, 1)) * _editorData.HelperVisual.transform.localToWorldMatrix;
+                        Matrix4x4 finalMat = Matrix4x4.Scale(new Vector3(1, 0, 1)) * EditorData.HelperVisual.transform.localToWorldMatrix;
                         _surfaceBounds.size = CalculateBoundsFromMatrix(finalMat).size;
                         return true;
                     }
@@ -214,19 +220,19 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             }
         }
 
-        private bool ValidateMap(int index, bool showErrors)
+        private static bool ValidateMap(Texture2D map, int index, bool showErrors)
         {
-            if (_data[index].Map != null)
+            if (map != null)
             {
                 try
                 {
-                    _data[index].Map.GetPixel(0, 0);
+                   map.GetPixel(0, 0);
                 }
                 catch (UnityException e)
                 {
-                    if (e.Message.StartsWith("Texture '" + _data[index].Map.name + "' is not readable"))
+                    if (e.Message.StartsWith("Texture '" + map.name + "' is not readable"))
                     {
-                        LogError(showErrors, "Poisson -> Map [Level " + index + "]: please enable read/write on texture [" + _data[index].Map.name + "]");
+                        LogError(showErrors, "Poisson -> Map [Level " + index + "]: please enable read/write on texture [" + map.name + "]");
                         return false;
                     }
                 }
@@ -234,9 +240,8 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             return true;
         }
 
-        private bool ValidateLevel(int index, bool showErrors)
+        private static bool ValidateLevel(PoissonData data, int index, bool showErrors)
         {
-            PoissonData data = _data[index];
             if (data.PoissonObjects == null)
             {
                 LogError(showErrors, "Poisson -> Poisson Data [Level " + index + "]: variable not set");
@@ -254,10 +259,10 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 return false;
             }
 
-            return ValidateMap(index, showErrors);
+            return ValidateMap(data.Map, index, showErrors);
         }
 
-        private void LogError(bool showError, string errorMsg)
+        private static void LogError(bool showError, string errorMsg)
         {
             if (showError)
             {
@@ -274,19 +279,20 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             highestValid = -1;
             if (isValidSurface)
             {
-                for (int i = 0; i < _data.Count; ++i)
+                for (int i = 0; i < Data.Count; ++i)
                 {
-                    if (i < _editorData.SelectedLevelIndex)
+                    PoissonData data = Data[i];
+                    if (i < UIData.SelectedLevelIndex)
                     {
-                        preValid &= ValidateLevel(i, showErrors);
+                        preValid &= ValidateLevel(data, i, showErrors);
                         if(preValid)
                         {
                             highestValid = i;
                         }
                     }
-                    else if (i > _editorData.SelectedLevelIndex)
+                    else if (i > UIData.SelectedLevelIndex)
                     {
-                        postValid &= ValidateLevel(i, showErrors);
+                        postValid &= ValidateLevel(data, i, showErrors);
                         if (postValid)
                         {
                             highestValid = i;
@@ -294,7 +300,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     }
                     else
                     {
-                        currValid = ValidateLevel(i, showErrors);
+                        currValid = ValidateLevel(data, i, showErrors);
                         if (currValid)
                         {
                             highestValid = i;

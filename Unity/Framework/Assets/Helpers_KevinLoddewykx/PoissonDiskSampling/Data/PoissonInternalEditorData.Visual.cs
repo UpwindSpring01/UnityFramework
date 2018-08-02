@@ -1,12 +1,12 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
-using Helpers_KevinLoddewykx.General;
 
 namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 {
     public partial class PoissonInternalEditorData
     {
-        public void InitVisual(PoissonModeData modeData, PoissonData data, Transform parent)
+        public void InitVisual(PoissonModeData modeData, PoissonData data, PoissonPlacer placer)
         {
             if (HelperVisual == null)
             {
@@ -26,9 +26,9 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
                 GameObject parentObj = new GameObject();
                 parentObj.hideFlags = HideFlags.HideInHierarchy | HideFlags.HideInInspector | HideFlags.NotEditable | HideFlags.DontSave;
-                if (parent)
+                if (placer)
                 {
-                    parentObj.transform.parent = parent;
+                    parentObj.transform.parent = placer.transform;
                     parentObj.transform.SetAsFirstSibling();
                     parentObj.transform.parent = parentObj.transform;
                     parentObj.transform.localPosition = Vector3.zero;
@@ -37,12 +37,9 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 }
 
                 HelperVisual = new GameObject();
-                HelperVisual.hideFlags = HideFlags.DontSave;
+             //   HelperVisual.hideFlags = HideFlags.DontSave;
 
                 HelperVisual.transform.parent = parentObj.transform;
-                HelperVisual.transform.localPosition = Position;
-                HelperVisual.transform.localRotation = Rotation;
-                HelperVisual.transform.localScale = Scale;
 
                 HelperVisual.gameObject.SetActive(false);
 
@@ -50,41 +47,14 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
                 Renderer = HelperVisual.AddComponent<MeshRenderer>();
 
-                HelperVisual.AddComponent<DeleteBlocker>().hideFlags = HideFlags.NotEditable | HideFlags.DontSave;
-
-                UpdateVisualMode(modeData);
-                UpdateVisualPercentages(modeData);
-                UpdateVisualTexture(modeData, data);
-                UpdateAllowVisualTransformChanges();
+                DeleteHelper = HelperVisual.AddComponent<PoissonDeleteHelper>();
+                
+                RefreshVisual(modeData, data);
             }
-        }
-
-        public void UpdateVisualPercentages(PoissonModeData modeData)
-        {
-            TopMaterial.SetFloat("_PercentageX", modeData.RejectPercentage.x);
-            TopMaterial.SetFloat("_PercentageZ", modeData.RejectPercentage.y);
-        }
-
-        public void DestroyVisual()
-        {
-            if (HelperVisual)
+            if (placer)
             {
-                Position = HelperVisual.transform.localPosition;
-                Rotation = HelperVisual.transform.localRotation;
-                Scale = HelperVisual.transform.localScale;
-                Object.DestroyImmediate(HelperVisual.transform.parent.gameObject);
+                DeleteHelper.Placer = placer;
             }
-            HelperVisual = null;
-            MeshFilter = null;
-            Renderer = null;
-
-            EllipseMesh = null;
-            PlaneMesh = null;
-            BoxMesh = null;
-            CylinderMesh = null;
-
-            FaceMaterial = null;
-            TopMaterial = null;
         }
 
         private void CreateCylinderMesh()
@@ -426,6 +396,48 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             PlaneMesh.SetIndices(BoxMesh.GetIndices(0), MeshTopology.Quads, 0);
         }
 
+        public void DestroyVisual(PoissonModeData modeData)
+        {
+            if (HelperVisual)
+            {
+                modeData.Position = HelperVisual.transform.localPosition;
+                modeData.Rotation = HelperVisual.transform.localRotation;
+                modeData.Scale = HelperVisual.transform.localScale;
+
+                Object.DestroyImmediate(HelperVisual.transform.parent.gameObject);
+            }
+            HelperVisual = null;
+            MeshFilter = null;
+            Renderer = null;
+            DeleteHelper = null;
+
+            EllipseMesh = null;
+            PlaneMesh = null;
+            BoxMesh = null;
+            CylinderMesh = null;
+
+            FaceMaterial = null;
+            TopMaterial = null;
+        }
+
+        public void RefreshVisual(PoissonModeData modeData, PoissonData data)
+        {
+            UpdateVisualMode(modeData);
+            UpdateVisualPercentages(modeData);
+            UpdateVisualTexture(modeData, data);
+            UpdateAllowVisualTransformChanges();
+
+            HelperVisual.transform.localPosition = modeData.Position;
+            HelperVisual.transform.localRotation = modeData.Rotation;
+            HelperVisual.transform.localScale = modeData.Scale;
+        }
+
+        public void UpdateVisualPercentages(PoissonModeData modeData)
+        {
+            TopMaterial.SetFloat("_PercentageX", modeData.RejectPercentageX);
+            TopMaterial.SetFloat("_PercentageZ", modeData.RejectPercentageY);
+        }
+
         public void UpdateVisualTexture(PoissonModeData modeData, PoissonData data)
         {
             TopMaterial.mainTexture = data.Map;
@@ -483,6 +495,8 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             }
             MeshFilter.hideFlags = HideFlags.HideInInspector | HideFlags.DontSave | HideFlags.NotEditable;
             Renderer.hideFlags = HideFlags.HideInInspector | HideFlags.DontSave | HideFlags.NotEditable;
+            DeleteHelper.hideFlags = HideFlags.NotEditable | HideFlags.DontSave;
         }
     }
 }
+#endif

@@ -3,15 +3,13 @@ using UnityEditor;
 using UnityEngine;
 
 // Currently broken
-// Undo/Redo
-// The default reset button from a monobehaviour
-// Presets
+// Presets (waiting for the new built-in Preset Manager)
 // UI, margins not resetted
 // Visualizer shader not optimal
 
 namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 {
-    public partial class PoissonDiskSamplingWindow : EditorWindow
+    public class PoissonDiskSamplingWindow : EditorWindow, IPoissonDataHolder
     {
         [MenuItem("Tools/Poisson Disk Distribution")]
         static void PoissonWindow()
@@ -31,11 +29,45 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         [SerializeField]
         private PoissonInternalEditorData _editorData = new PoissonInternalEditorData();
 
+        [SerializeField]
+        private PoissonUIData _uiData = new PoissonUIData();
+
+        [SerializeField]
+        private long _serializedId = 0;
+
+        private long _id = 0;
+
         private PoissonHelper _helper;
+
+        public PoissonModeData ModeData
+        {
+            get { return _modeData; }
+            set { _modeData = value; }
+        }
+
+        public List<PoissonData> Data
+        {
+            get { return _data; }
+            set { _data = value; }
+        }
+
+        public PoissonUIData UIData
+        {
+            get { return _uiData; }
+            set { _uiData = value; }
+        }
+
+        public PoissonInternalEditorData EditorData
+        {
+            get { return _editorData; }
+            set { _editorData = value; }
+        }
+
+        public bool IsWindow => true;
 
         public PoissonDiskSamplingWindow()
         {
-            _helper = new PoissonHelper(this, _modeData, _data, _editorData, this);
+            _helper = new PoissonHelper(this);
         }
 
         private void OnDestroy()
@@ -51,20 +83,35 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         private void OnEnable()
         {
             _helper.Init();
-
+            // Set _editorData to new instance, so it does not conflict with undo redo inside the PoissonHelper
+            // PlacedObjects and other vars were being resetted
+            _editorData = null;
             Undo.undoRedoPerformed += UndoRedoEvent;
         }
 
         private void OnDisable()
         {
             _helper.ShutDown();
+            _editorData = _helper.EditorData;
 
             Undo.undoRedoPerformed -= UndoRedoEvent;
         }
 
         private void UndoRedoEvent()
         {
+            if (_helper.EditorData.HelperVisual && _serializedId != _id)
+            {
+                _helper.RefreshDistribution();
+                _id = _serializedId;
+            }
+
             Repaint();
+        }
+
+        public void VisualTransformChanged()
+        {
+            ++_serializedId;
+            ++_id;
         }
     }
 }

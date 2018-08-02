@@ -1,11 +1,12 @@
 ﻿#if UNITY_EDITOR
+using Helpers_KevinLoddewykx.General;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 {
     [ExecuteInEditMode]
-    public class PoissonPlacer : MonoBehaviour
+    public class PoissonPlacer : MonoBehaviour, IPoissonDataHolder
     {
         [SerializeField]
         [HideInInspector]
@@ -17,20 +18,66 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
         [SerializeField]
         [HideInInspector]
+        private PoissonUIData _uiData = new PoissonUIData();
+
+        [SerializeField]
+        [HideInInspector]
         private PoissonInternalEditorData _editorData = new PoissonInternalEditorData();
 
-        public PoissonModeData ModeData => _modeData;
-
-        public List<PoissonData> Data => _data;
-
-        public PoissonInternalEditorData EditorData => _editorData;
-
-        public void Awake()
+        public PoissonModeData ModeData
         {
-            if(!Application.isPlaying && !_editorData.HelperVisual)
+            get { return _modeData; }
+            set { _modeData = value; }
+        }
+
+        public List<PoissonData> Data
+        {
+            get { return _data; }
+            set { _data = value; }
+        }
+
+        public PoissonUIData UIData
+        {
+            get { return _uiData; }
+            set { _uiData = value; }
+        }
+
+        public PoissonInternalEditorData EditorData
+        {
+            get { return _editorData; }
+            set { _editorData = value; }
+        }
+
+        public bool IsWindow => false;
+
+        public void VisualTransformChanged()
+        {
+        }
+
+        private void OnEnable()
+        {
+            if (!Application.isPlaying)
             {
-                _editorData.InitVisual(_modeData, _data[_editorData.SelectedLevelIndex], transform);
+                EditorConnector.Connector.Register(this);
             }
+        }
+
+        private void OnDisable()
+        {
+            if (!Application.isPlaying)
+            {
+                EditorConnector.Connector.Unregister(this);
+            }
+        }
+
+        private void Start()
+        {
+            // Empty start so the enable/disable checkbox is added to the inspector
+        }
+
+        private void Reset()
+        {
+            EditorConnector.Connector.Reset(this);
         }
     }
 }

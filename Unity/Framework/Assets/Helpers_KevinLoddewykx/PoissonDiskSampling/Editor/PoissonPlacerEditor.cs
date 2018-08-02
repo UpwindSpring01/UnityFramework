@@ -11,7 +11,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         private void OnEnable()
         {
             PoissonPlacer placer = (PoissonPlacer)target;
-            _helper = new PoissonHelper(target, placer.ModeData, placer.Data, placer.EditorData, null);
+            _helper = new PoissonHelper(placer);
             _helper.Init();
         }
 
@@ -21,11 +21,18 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             {
                 _helper.ShutDown();
             }
+            else
+            {
+                _helper.StopUndoRedoTracking();
+            }
         }
 
         public override void OnInspectorGUI()
         {
-            _helper.CreateUI();
+            if (((PoissonPlacer)target).enabled)
+            {
+                _helper.CreateUI();
+            }
         }
 
         public override bool UseDefaultMargins()

@@ -13,22 +13,7 @@ namespace Helpers_KevinLoddewykx
             {
                 if (!_instance)
                 {
-                    _instance = Resources.FindObjectsOfTypeAll<T>().FirstOrDefault();
-                    if (_instance == null)
-                    {
-                        _instance = CreateInstance<T>();
-                        //if (!AssetDatabase.IsValidFolder("Asserts/Resources"))
-                        //{
-                        //    AssetDatabase.CreateFolder("Assets", "Resources");
-
-                        //}
-                        //if (!AssetDatabase.IsValidFolder("Asserts/Resources/Editor"))
-                        //{
-                        //    AssetDatabase.CreateFolder("Assets/Resources", "Editor");
-                        //}
-                        //AssetDatabase.CreateAsset(_instance, "Assets/Resources/Editor/PoissonInternalData.Asset");
-
-                    }
+                    _instance = CreateInstance<T>();
                 }
                 return _instance;
             }

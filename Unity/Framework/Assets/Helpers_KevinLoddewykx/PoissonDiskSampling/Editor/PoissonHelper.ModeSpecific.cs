@@ -11,19 +11,19 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             Color oldColor = GUI.backgroundColor;
             GUI.backgroundColor = BACKGROUND_COLOR_SUB_MENU;
             EditorGUILayout.BeginVertical(SubBoxStyle);
-            halfWidth -= (_window == null) ? BoxMargin * 0.5f : BoxMargin;
+            halfWidth -= (DataHolder.IsWindow) ? BoxMargin : BoxMargin * 0.5f;
             GUI.backgroundColor = oldColor;
 
-            if (_modeData.Mode != DistributionMode.Surface)
+            if (ModeData.Mode != DistributionMode.Surface)
             {
-                if (_modeData.Mode >= DistributionMode.ProjectionRect)
+                if (ModeData.Mode >= DistributionMode.ProjectionRect)
                 {
                     EditorGUILayout.BeginHorizontal(RowStyle);
                     EditorGUILayout.BeginVertical(SubLeftColumnStyle, GUILayout.MaxWidth(halfWidth));
-                    _selectedData.ProjectionLayerMask = EditorGUILayout.MaskField("Layer mask:", _selectedData.ProjectionLayerMask, InternalEditorUtility.layers, PopupStyle);
+                    SelectedData.ProjectionLayerMask = EditorGUILayout.MaskField("Layer mask:", SelectedData.ProjectionLayerMask, InternalEditorUtility.layers, PopupStyle);
                     EditorGUILayout.EndVertical();
                     EditorGUILayout.BeginVertical(RightColumnStyle, GUILayout.MaxWidth(halfWidth));
-                    _selectedData.ProjectionRaycastTriggerInteraction = (QueryTriggerInteraction)EditorGUILayout.EnumPopup("Trigger query mode:", _selectedData.ProjectionRaycastTriggerInteraction, PopupStyle);
+                    SelectedData.ProjectionRaycastTriggerInteraction = (QueryTriggerInteraction)EditorGUILayout.EnumPopup("Trigger query mode:", SelectedData.ProjectionRaycastTriggerInteraction, PopupStyle);
                     EditorGUILayout.EndVertical();
                     EditorGUILayout.EndHorizontal();
                 }
@@ -31,17 +31,10 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 EditorGUILayout.BeginVertical(SingleRowStyle, GUILayout.MaxWidth(halfWidth * 2 + ColumnGap));
                 EditorGUI.BeginChangeCheck();
 
-                if (!_isPrefab && _editorData.HelperVisual.transform.hasChanged)
-                {
-                    _editorData.Position = _editorData.HelperVisual.transform.localPosition;
-                    _editorData.Rotation = _editorData.HelperVisual.transform.localRotation;
-                    _editorData.Scale = _editorData.HelperVisual.transform.localScale;
-                }
-
-                Vector3 pos = EditorGUILayout.Vector3Field("Position:", _editorData.Position);
-                Quaternion rot = Quaternion.Euler(EditorGUILayout.Vector3Field("Rotation:", _editorData.Rotation.eulerAngles));
-                Vector3 scale = _editorData.Scale;
-                if (_modeData.Mode >= DistributionMode.ProjectionRect)
+                Vector3 pos = EditorGUILayout.Vector3Field("Position:", ModeData.Position);
+                Quaternion rot = Quaternion.Euler(EditorGUILayout.Vector3Field("Rotation:", ModeData.Rotation.eulerAngles));
+                Vector3 scale = ModeData.Scale;
+                if (ModeData.Mode >= DistributionMode.ProjectionRect)
                 {
                     scale = EditorGUILayout.Vector3Field("Scale:", scale);
                 }
@@ -53,24 +46,24 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 }
                 if (EditorGUI.EndChangeCheck())
                 {
-                    _editorData.Position = pos;
-                    _editorData.Rotation = rot;
-                    _editorData.Scale = scale;
-                    if (!_isPrefab)
+                    ModeData.Position = pos;
+                    ModeData.Rotation = rot;
+                    ModeData.Scale = scale;
+                    if (!IsPrefab)
                     {
-                        _editorData.HelperVisual.transform.localPosition = pos;
-                        _editorData.HelperVisual.transform.localRotation = rot;
-                        _editorData.HelperVisual.transform.localScale = scale;
+                        EditorData.HelperVisual.transform.localPosition = pos;
+                        EditorData.HelperVisual.transform.localRotation = rot;
+                        EditorData.HelperVisual.transform.localScale = scale;
                         SceneView.RepaintAll();
                     }
                 }
 
                 EditorGUI.BeginChangeCheck();
-                _modeData.RejectPercentage.x = EditorGUILayout.Slider("Exclude X %:", _modeData.RejectPercentage.x, 0.0f, 1.0f);
-                _modeData.RejectPercentage.y = EditorGUILayout.Slider("Exclude Z %:", _modeData.RejectPercentage.y, 0.0f, 1.0f);
+                ModeData.RejectPercentageX = EditorGUILayout.Slider("Exclude X %:", ModeData.RejectPercentageX, 0.0f, 1.0f);
+                ModeData.RejectPercentageY = EditorGUILayout.Slider("Exclude Z %:", ModeData.RejectPercentageY, 0.0f, 1.0f);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    _editorData.UpdateVisualPercentages(_modeData);
+                    EditorData.UpdateVisualPercentages(ModeData);
                 }
                 EditorGUILayout.EndVertical();
             }
@@ -79,9 +72,9 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 EditorGUILayout.BeginHorizontal(RowStyle);
 
                 EditorGUILayout.BeginVertical(SubLeftColumnStyle, GUILayout.MaxWidth(halfWidth));
-                using (new EditorGUI.DisabledScope(_editorData.Grids[0].ReadOnly))
+                using (new EditorGUI.DisabledScope(EditorData.Grids[0].ReadOnly))
                 {
-                    _modeData.SurfaceMeshFilter = (MeshFilter)EditorGUILayout.ObjectField("Surface:", _modeData.SurfaceMeshFilter, typeof(MeshFilter), true);
+                    ModeData.SurfaceMeshFilter = (MeshFilter)EditorGUILayout.ObjectField("Surface:", ModeData.SurfaceMeshFilter, typeof(MeshFilter), true);
                 }
                 EditorGUILayout.EndVertical();
                 EditorGUILayout.BeginVertical(RightColumnStyle, GUILayout.MaxWidth(halfWidth));
@@ -94,7 +87,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
         private Vector2 GenerateStartPoint()
         {
-            switch (_modeData.Mode)
+            switch (ModeData.Mode)
             {
                 case DistributionMode.Ellipse:
                 case DistributionMode.ProjectionEllipse:
@@ -117,7 +110,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
         private bool InBounds(Vector2 loc)
         {
-            if (_modeData.Mode == DistributionMode.ProjectionEllipse || _modeData.Mode == DistributionMode.Ellipse)
+            if (ModeData.Mode == DistributionMode.ProjectionEllipse || ModeData.Mode == DistributionMode.Ellipse)
             {
                 return ((loc.x * loc.x) / (_surfaceBounds.extents.x * _surfaceBounds.extents.x)
                   + (loc.y * loc.y) / (_surfaceBounds.extents.z * _surfaceBounds.extents.z)) <= 1.0f;
@@ -132,15 +125,15 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         private bool InInnerBounds(Vector2 loc)
         {
             bool result = false;
-            switch (_modeData.Mode)
+            switch (ModeData.Mode)
             {
                 case DistributionMode.Surface:
                     break;
                 case DistributionMode.Plane:
                 case DistributionMode.ProjectionRect:
                     {
-                        float x = _surfaceBounds.extents.x * _modeData.RejectPercentage.x;
-                        float z = _surfaceBounds.extents.z * _modeData.RejectPercentage.y;
+                        float x = _surfaceBounds.extents.x * ModeData.RejectPercentageX;
+                        float z = _surfaceBounds.extents.z * ModeData.RejectPercentageY;
 
                         result = loc.x >= _surfaceBounds.center.x - x && loc.x <= _surfaceBounds.center.x + x
                             && loc.y >= _surfaceBounds.center.z - z && loc.y <= _surfaceBounds.center.z + z;
@@ -149,8 +142,8 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 case DistributionMode.Ellipse:
                 case DistributionMode.ProjectionEllipse:
                     {
-                        float x = _surfaceBounds.extents.x * _modeData.RejectPercentage.x;
-                        float z = _surfaceBounds.extents.z * _modeData.RejectPercentage.y;
+                        float x = _surfaceBounds.extents.x * ModeData.RejectPercentageX;
+                        float z = _surfaceBounds.extents.z * ModeData.RejectPercentageY;
                         result = ((loc.x * loc.x) / (x * x)
                           + (loc.y * loc.y) / (z * z)) <= 1.0f;
                     }
@@ -161,7 +154,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
         private bool CastRay(Vector2 loc, out RaycastHit hit)
         {
-            switch (_modeData.Mode)
+            switch (ModeData.Mode)
             {
                 case DistributionMode.Surface:
                     foreach (Collider col in _surfaceColliders)
@@ -179,7 +172,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                         float xPos = Remap(loc.x, _surfaceBounds.min.x, _surfaceBounds.max.x, -0.5f, 0.5f);
                         float zPos = Remap(loc.y, _surfaceBounds.min.z, _surfaceBounds.max.z, -0.5f, 0.5f);
 
-                        Transform transform = _editorData.HelperVisual.transform;
+                        Transform transform = EditorData.HelperVisual.transform;
                         Matrix4x4 mat = transform.localToWorldMatrix;
                         Vector3 startPos = mat.MultiplyPoint(new Vector3(xPos, 0.0f, zPos));
 
@@ -194,7 +187,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                         float xPos = Remap(loc.x, _surfaceBounds.min.x, _surfaceBounds.max.x, -0.5f, 0.5f);
                         float zPos = Remap(loc.y, _surfaceBounds.min.z, _surfaceBounds.max.z, -0.5f, 0.5f);
 
-                        Transform transform = _editorData.HelperVisual.transform;
+                        Transform transform = EditorData.HelperVisual.transform;
                         Matrix4x4 mat = transform.localToWorldMatrix;
 
                         hit.normal = mat.MultiplyVector(Vector3.up).normalized;
