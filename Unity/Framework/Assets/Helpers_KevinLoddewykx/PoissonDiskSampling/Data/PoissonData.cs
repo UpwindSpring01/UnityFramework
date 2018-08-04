@@ -1,5 +1,6 @@
 ﻿#if UNITY_EDITOR
 using Helpers_KevinLoddewykx.General;
+using Helpers_KevinLoddewykx.General.WeightedArrayCore;
 using UnityEngine;
 
 namespace Helpers_KevinLoddewykx.PoissonDiskSampling
@@ -33,6 +34,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
             public bool AlignToSurface = false;
             public bool UniformScaling = false;
+            public bool ScaleHeightOffset = false;
 
             public float MinHeightOffset = 0.0f;
             public float MaxHeightOffset = 0.0f;
@@ -62,6 +64,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
                 to.AlignToSurface = from.AlignToSurface;
                 to.UniformScaling = from.UniformScaling;
+                to.ScaleHeightOffset = from.ScaleHeightOffset;
 
                 to.MinHeightOffset = from.MinHeightOffset;
                 to.MaxHeightOffset = from.MaxHeightOffset;
@@ -109,9 +112,9 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         public bool BoxCollisionCheck = false;
 
         [SerializeField]
-        public BaseWeightedCollection PoissonObjects;
+        public WeightedScriptableObject PoissonObjects;
         [SerializeField]
-        public BaseWeightedCollection ClumpObjects;
+        public WeightedScriptableObject ClumpObjects;
 
         [SerializeField]
         public ObjectOptions[] PoissonObjectOptions;

@@ -91,25 +91,25 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         public GameObject HelperVisual = null;
 
         [SerializeField]
-        public Material TopMaterial;
+        public Material TopMaterial = null;
         [SerializeField]
-        public Material FaceMaterial;
+        public Material FaceMaterial = null;
 
         [SerializeField]
-        public MeshRenderer Renderer;
+        public MeshRenderer Renderer = null;
         [SerializeField]
-        public MeshFilter MeshFilter;
+        public MeshFilter MeshFilter = null;
         [SerializeField]
-        public PoissonDeleteHelper DeleteHelper;
+        public PoissonDeleteHelper DeleteHelper = null;
 
         [SerializeField]
-        public Mesh BoxMesh;
+        public Mesh BoxMesh = null;
         [SerializeField]
-        public Mesh CylinderMesh;
+        public Mesh CylinderMesh = null;
         [SerializeField]
-        public Mesh PlaneMesh;
+        public Mesh PlaneMesh = null;
         [SerializeField]
-        public Mesh EllipseMesh;
+        public Mesh EllipseMesh = null;
     }
 }
 #endif

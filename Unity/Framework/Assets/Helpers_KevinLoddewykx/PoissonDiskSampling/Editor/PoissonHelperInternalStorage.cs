@@ -15,9 +15,9 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         [HideInInspector]
         private List<PoissonHelper> _helpers = new List<PoissonHelper>();
 
-        public void RemoveAndAdd(IPoissonDataHolder obj, PoissonHelper helper)
+        public bool RemoveAndAdd(IPoissonDataHolder obj, PoissonHelper helper)
         {
-            Remove(obj);
+            bool existed = Remove(obj);
             SceneView.onSceneGUIDelegate += helper.OnSceneGUI;
             if (!helper.DataHolder.IsWindow)
             {
@@ -25,9 +25,11 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             }
             _helpers.Add(helper);
             _placers.Add(obj);
+
+            return existed;
         }
 
-        public void Remove(IPoissonDataHolder obj)
+        public bool Remove(IPoissonDataHolder obj)
         {
             int index = _placers.IndexOf(obj);
             if (index >= 0)
@@ -39,7 +41,9 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 }
                 _helpers.RemoveAt(index);
                 _placers.RemoveAt(index);
+                return true;
             }
+            return false;
         }
 
         public void RemoveUndoRedoTracking(IPoissonDataHolder obj)
@@ -57,7 +61,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             if (index >= 0)
             {
                 _helpers[index].Reset();
-                _helpers[index].EditorData.RefreshVisual(_helpers[index].ModeData, _helpers[index].SelectedData);
+                _helpers[index].EditorData.RefreshVisual(_helpers[index].ModeData, _helpers[index].SelectedData, _helpers[index].DataHolder.IsWindow);
             }
         }
 
@@ -69,8 +73,9 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
         public void Unregister(IPoissonDataHolder obj)
         {
-            // Create visual and attach onSceneGUIDelegate + undoRedoPerformed listeners
+            // Destroy visual and detach onSceneGUIDelegate + undoRedoPerformed listeners
             Remove(obj);
+
             obj.EditorData.DestroyVisual(obj.ModeData);
         }
     }

@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace Helpers_KevinLoddewykx.General.WeightedArray
+namespace Helpers_KevinLoddewykx.General.WeightedArrayCore
 {
     [Serializable]
     public class WeightedArray
     {
         [SerializeField]
+        [HideInInspector]
         private List<WeightedObject> _objects;
 
         [SerializeField]
+        [HideInInspector]
         private int _totalWeight;
 
         [SerializeField]

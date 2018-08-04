@@ -9,14 +9,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f1b452c89b327224e8d9b2578f4ad393, type: 3}
-  m_Name: Sphere_WeightedCollection
+  m_Name: Capsule_WeightedCollection
   m_EditorClassIdentifier: 
   _elements:
-  - _name: Weighted Gameobjects
-    _weightedArray:
-      _objects:
-      - Object: {fileID: 1480393257502300, guid: 1d22bc580c62e7444ac61d9bb9ec5607,
-          type: 2}
-        Weight: 1
-      _totalWeight: 1
-      _allowNull: 0
+  - _objects:
+    - Object: {fileID: 1284413986718742, guid: 745f000caef451a4690ac9b089d58262, type: 2}
+      Weight: 1
+    _totalWeight: 1
+    _allowNull: 0
+  _names:
+  - Weighted Gameobjects

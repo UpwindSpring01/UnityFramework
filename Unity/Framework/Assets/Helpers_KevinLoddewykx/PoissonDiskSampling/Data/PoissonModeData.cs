@@ -9,7 +9,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         Surface,
         Plane,
         Ellipse,
-        ProjectionRect,
+        ProjectionPlane,
         ProjectionEllipse
     }
 
@@ -20,7 +20,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         public DistributionMode Mode = DistributionMode.Surface;
 
         [SerializeField]
-        public MeshFilter SurfaceMeshFilter = null;
+        public GameObject Surface = null;
 
         [SerializeField]
         public bool RealtimePreview = false;
@@ -46,7 +46,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         public static void Copy(PoissonModeData from, PoissonModeData to)
         {
             to.Mode = from.Mode;
-            to.SurfaceMeshFilter = from.SurfaceMeshFilter;
+            to.Surface = from.Surface;
 
             to.RealtimePreview = from.RealtimePreview;
             to.RejectPercentageX = from.RejectPercentageX;

@@ -2,6 +2,7 @@
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using Helpers_KevinLoddewykx.General.WeightedArrayCore;
 
 namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 {
@@ -143,16 +144,16 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             switch (ModeData.Mode)
             {
                 case DistributionMode.Surface:
-                    if (ModeData.SurfaceMeshFilter != null)
+                    if (ModeData.Surface != null)
                     {
-                        PrefabType prefabType = PrefabUtility.GetPrefabType(ModeData.SurfaceMeshFilter.gameObject);
+                        PrefabType prefabType = PrefabUtility.GetPrefabType(ModeData.Surface);
                         if (prefabType == PrefabType.Prefab || prefabType == PrefabType.ModelPrefab)
                         {
                             LogError(showErrors, "Mode -> Surface: surface object needs to be part of the scene.");
                             return false;
                         }
 
-                        _surfaceColliders = ModeData.SurfaceMeshFilter.GetComponents<Collider>() ?? null;
+                        _surfaceColliders = ModeData.Surface.GetComponents<Collider>() ?? null;
                         if (!_surfaceColliders.Any())
                         {
                             LogError(showErrors, "Mode -> Surface: surface object requires a collider component.");
@@ -166,7 +167,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                             return false;
                         }
 
-                        CalculateBoundsCollider(ModeData.SurfaceMeshFilter.gameObject, out _surfaceBounds);
+                        CalculateBoundsCollider(ModeData.Surface, out _surfaceBounds);
                         if (_surfaceBounds.extents.x == 0 || _surfaceBounds.extents.z == 0)
                         {
                             LogError(showErrors, "Mode -> Surface: and/or Z bounds are zero.");
@@ -177,7 +178,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                         {
                             foreach (List<GameObject> placedObjects in EditorData.PlacedObjects)
                             {
-                                if (placedObjects.Contains(ModeData.SurfaceMeshFilter.gameObject))
+                                if (placedObjects.Contains(ModeData.Surface))
                                 {
                                     LogError(showErrors, "Mode -> Surface: can not use an active generated gameobject as surface.");
                                     return false;
@@ -188,7 +189,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     }
                     LogError(showErrors, "Mode -> Surface: no surface object set.");
                     return false;
-                case DistributionMode.ProjectionRect:
+                case DistributionMode.ProjectionPlane:
                 case DistributionMode.ProjectionEllipse:
                     {
                         Vector3 scale = EditorData.HelperVisual.transform.localScale;
@@ -247,13 +248,13 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 LogError(showErrors, "Poisson -> Poisson Data [Level " + index + "]: variable not set");
                 return false;
             }
-            else if (!data.PoissonObjects.Element.WeightedArray.HasWeightedElementsNonNull())
+            else if (!data.PoissonObjects.Element.HasWeightedElementsNonNull())
             {
                 LogError(showErrors, "Poisson -> Poisson Data [Level " + index + "]: no non null weighted elements inside the weighted data object");
                 return false;
             }
 
-            if ((!data.ClumpObjects?.Element.WeightedArray.HasWeightedElementsNonNull()) ?? false)
+            if ((!data.ClumpObjects?.Element.HasWeightedElementsNonNull()) ?? false)
             {
                 LogError(showErrors, "Clumping -> Clump Data [Level " + index + "]: no non null weighted elements inside the weighted data object");
                 return false;

@@ -3,7 +3,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using Helpers_KevinLoddewykx.General.WeightedArray;
+using Helpers_KevinLoddewykx.General.WeightedArrayCore;
 using static Helpers_KevinLoddewykx.PoissonDiskSampling.PoissonData;
 using static Helpers_KevinLoddewykx.PoissonDiskSampling.PoissonInternalEditorData;
 using UnityEditorInternal;
@@ -28,11 +28,11 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         private int _currNestingLevel = 0;
         private int _maxNestingLevel = 0;
 
-        public void CleanupPlacedObjects(int start)
+        public static void CleanupPlacedObjects(PoissonInternalEditorData editorData, int start)
         {
-            for (int i = start; i <= EditorData.PlacedObjects.Count - 1; ++i)
+            for (int i = start; i <= editorData.PlacedObjects.Count - 1; ++i)
             {
-                foreach (GameObject gameObject in EditorData.PlacedObjects[i])
+                foreach (GameObject gameObject in editorData.PlacedObjects[i])
                 {
                     if (gameObject)
                     {
@@ -40,28 +40,13 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                         if (placer != null)
                         {
                             PoissonHelperInternalStorage.Instance.Remove(placer);
-                            placer.EditorData.DestroyVisual(ModeData);
+                            CleanupPlacedObjects(placer.EditorData, 0);
+                            placer.EditorData.DestroyVisual(placer.ModeData);
                         }
                         Object.DestroyImmediate(gameObject);
                     }
                 }
-                EditorData.PlacedObjects[i].Clear();
-            }
-
-            if (!DataHolder.IsWindow)
-            {
-                PoissonPlacer placer = (PoissonPlacer)DataHolder;
-                // First child is Visual Helper, skip it
-                ++start;
-                int i = start;
-                while (placer.transform.childCount > start)
-                {
-                    if (EditorData.Grids.Count < i + 1 || !EditorData.Grids[i].ReadOnly)
-                    {
-                        Object.DestroyImmediate(placer.transform.GetChild(start).gameObject);
-                    }
-                    ++i;
-                }
+                editorData.PlacedObjects[i].Clear();
             }
         }
 
@@ -72,7 +57,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 EditorData.PlacedObjects[i].Clear();
                 EditorData.Grids[i].ReadOnly = true;
             }
-            EditorData.UpdateAllowVisualTransformChanges();
+            EditorData.UpdateAllowVisualTransformChanges(DataHolder.IsWindow);
             SceneView.RepaintAll();
         }
 
@@ -246,7 +231,12 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 newRotation = Quaternion.Euler(eulerAngles);
             }
 
-            newPosition += normalDir * Random.Range(options.MinHeightOffset, options.MaxHeightOffset);
+            float heightOffset = Random.Range(options.MinHeightOffset, options.MaxHeightOffset);
+            if(options.ScaleY && options.ScaleHeightOffset)
+            {
+                heightOffset *= newScale.y;
+            }
+            newPosition += normalDir * heightOffset;
         }
 
         private bool CreateRandomObjectAtLoc(Vector2 loc, float finalMinDistSqrd, out bool objectPlaced, WeightedArray weightedObjects, ObjectOptions[] objectOptions, bool preview)
@@ -283,7 +273,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                                     {
                                         if (ModeData.Mode == DistributionMode.Surface)
                                         {
-                                            ModeData.SurfaceMeshFilter.gameObject.SetActive(false);
+                                            ModeData.Surface.gameObject.SetActive(false);
                                         }
 
                                         bool hasOverlap = true;
@@ -298,7 +288,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                                         }
                                         if (ModeData.Mode == DistributionMode.Surface)
                                         {
-                                            ModeData.SurfaceMeshFilter.gameObject.SetActive(true);
+                                            ModeData.Surface.gameObject.SetActive(true);
                                         }
                                         if (hasOverlap)
                                         {
@@ -317,16 +307,12 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                             obj.transform.rotation = rot;
                             obj.transform.localScale = scale;
 
+                            // When not doing this the colliders aren't properly initialized and OverlapXXX won't work
                             obj.SetActive(false);
                             obj.SetActive(true);
-                            if (!DataHolder.IsWindow)
-                            {
-                                obj.transform.parent = ((PoissonPlacer)DataHolder).transform.GetChild(_activeLevel + 1);
-                            }
-                            else
-                            {
-                                obj.transform.parent = options.Parent;
-                            }
+
+                            obj.transform.parent = options.Parent;
+
                             EditorData.PlacedObjects[_activeLevel].Add(obj);
 
                             if (_currNestingLevel < _maxNestingLevel)
@@ -344,9 +330,12 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                                     placer.EditorData.LastFrameValid = isValidSurface && preValid && currValid && postValid;
                                     if (highestValid >= 0)
                                     {
+                                        Random.State randState = Random.state;
                                         helper.DistributePoisson(0, highestValid, preview, _currNestingLevel + 1, _maxNestingLevel);
+                                        Random.state = randState;
                                     }
                                     helper.StoreDataHolder();
+                                    
                                 }
                             }
                         }
@@ -360,7 +349,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         private void GenerateObject(Vector2 loc, float minDistSqrd, List<Vector2> processList, bool preview)
         {
             bool objectPlaced;
-            if (CreateRandomObjectAtLoc(loc, minDistSqrd, out objectPlaced, _activeData.PoissonObjects.Element.WeightedArray, _activeData.PoissonObjectOptions, preview))
+            if (CreateRandomObjectAtLoc(loc, minDistSqrd, out objectPlaced, _activeData.PoissonObjects.Element, _activeData.PoissonObjectOptions, preview))
             {
                 processList.Add(loc);
 
@@ -375,13 +364,13 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 }
                 _activeGrid.Grid2D[gridLoc].Add(new GridPoint { Point = loc, HasObject = objectPlaced });
 
-                if (objectPlaced && (_activeData.ClumpObjects?.Element.WeightedArray.HasWeightedElements() ?? false))
+                if (objectPlaced && (_activeData.ClumpObjects?.Element.HasWeightedElements() ?? false))
                 {
                     int clumpingAmount = Random.Range(_activeData.MinClump, _activeData.MaxClump);
 
                     for (int i = 0; i < clumpingAmount; ++i)
                     {
-                        CreateRandomObjectAtLoc(GenerateRandomPointClumping(loc), -1.0f, out objectPlaced, _activeData.ClumpObjects.Element.WeightedArray, _activeData.ClumpObjectOptions, preview);
+                        CreateRandomObjectAtLoc(GenerateRandomPointClumping(loc), -1.0f, out objectPlaced, _activeData.ClumpObjects.Element, _activeData.ClumpObjectOptions, preview);
                     }
                 }
             }
@@ -407,10 +396,6 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             if (_activeData.UseSeed)
             {
                 Random.InitState(_activeData.Seed);
-            }
-            else
-            {
-                Random.InitState(RandomGenerator.GenerateSeed());
             }
             float cellSize;
             if (_activeData.Map == null)
@@ -439,16 +424,11 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 EditorData.HelperVisual.transform.SetAsFirstSibling();
             }
 
-            CleanupPlacedObjects(start);
+            CleanupPlacedObjects(EditorData, start);
             _currNestingLevel = currNesting;
 
             for (_activeLevel = start; _activeLevel <= end; ++_activeLevel)
             {
-                if (!DataHolder.IsWindow)
-                {
-                    GameObject obj = new GameObject("Level " + _activeLevel);
-                    obj.transform.parent = ((PoissonPlacer)DataHolder).transform;
-                }
                 if (EditorData.Grids[_activeLevel].ReadOnly)
                 {
                     continue;

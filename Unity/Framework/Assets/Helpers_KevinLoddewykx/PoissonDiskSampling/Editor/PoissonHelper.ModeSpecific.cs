@@ -16,7 +16,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
             if (ModeData.Mode != DistributionMode.Surface)
             {
-                if (ModeData.Mode >= DistributionMode.ProjectionRect)
+                if (ModeData.Mode >= DistributionMode.ProjectionPlane)
                 {
                     EditorGUILayout.BeginHorizontal(RowStyle);
                     EditorGUILayout.BeginVertical(SubLeftColumnStyle, GUILayout.MaxWidth(halfWidth));
@@ -34,7 +34,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 Vector3 pos = EditorGUILayout.Vector3Field("Position:", ModeData.Position);
                 Quaternion rot = Quaternion.Euler(EditorGUILayout.Vector3Field("Rotation:", ModeData.Rotation.eulerAngles));
                 Vector3 scale = ModeData.Scale;
-                if (ModeData.Mode >= DistributionMode.ProjectionRect)
+                if (ModeData.Mode >= DistributionMode.ProjectionPlane)
                 {
                     scale = EditorGUILayout.Vector3Field("Scale:", scale);
                 }
@@ -72,12 +72,13 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 EditorGUILayout.BeginHorizontal(RowStyle);
 
                 EditorGUILayout.BeginVertical(SubLeftColumnStyle, GUILayout.MaxWidth(halfWidth));
-                using (new EditorGUI.DisabledScope(EditorData.Grids[0].ReadOnly))
+                using (new EditorGUI.DisabledScope(EditorData.Grids[0].ReadOnly || !DataHolder.IsWindow))
                 {
-                    ModeData.SurfaceMeshFilter = (MeshFilter)EditorGUILayout.ObjectField("Surface:", ModeData.SurfaceMeshFilter, typeof(MeshFilter), true);
+                    ModeData.Surface = (GameObject)EditorGUILayout.ObjectField("Surface:", ModeData.Surface, typeof(GameObject), true);
                 }
                 EditorGUILayout.EndVertical();
                 EditorGUILayout.BeginVertical(RightColumnStyle, GUILayout.MaxWidth(halfWidth));
+                EditorGUILayout.LabelField("");
                 EditorGUILayout.EndVertical();
 
                 EditorGUILayout.EndHorizontal();
@@ -100,7 +101,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                         return new Vector2(x, z);
                     }
                 case DistributionMode.Surface:
-                case DistributionMode.ProjectionRect:
+                case DistributionMode.ProjectionPlane:
                 case DistributionMode.Plane:
                 default:
                     return new Vector2(Random.Range(_surfaceBounds.min.x, _surfaceBounds.max.x), Random.Range(_surfaceBounds.min.z, _surfaceBounds.max.z));
@@ -130,7 +131,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 case DistributionMode.Surface:
                     break;
                 case DistributionMode.Plane:
-                case DistributionMode.ProjectionRect:
+                case DistributionMode.ProjectionPlane:
                     {
                         float x = _surfaceBounds.extents.x * ModeData.RejectPercentageX;
                         float z = _surfaceBounds.extents.z * ModeData.RejectPercentageY;
@@ -166,7 +167,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     }
                     hit = new RaycastHit();
                     return false;
-                case DistributionMode.ProjectionRect:
+                case DistributionMode.ProjectionPlane:
                 case DistributionMode.ProjectionEllipse:
                     {
                         float xPos = Remap(loc.x, _surfaceBounds.min.x, _surfaceBounds.max.x, -0.5f, 0.5f);
@@ -177,7 +178,8 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                         Vector3 startPos = mat.MultiplyPoint(new Vector3(xPos, 0.0f, zPos));
 
                         LayerMask correctedMask = InternalEditorUtility.ConcatenatedLayersMaskToLayerMask(_activeData.ProjectionLayerMask);
-                        return Physics.Raycast(startPos, mat.MultiplyPoint(new Vector3(xPos, -1.0f, zPos)) - startPos, out hit, _surfaceBounds.size.y, correctedMask, _activeData.ProjectionRaycastTriggerInteraction);
+                        Vector3 direction = mat.MultiplyPoint(new Vector3(xPos, -1.0f, zPos)) - startPos;
+                        return Physics.Raycast(startPos, direction, out hit, direction.magnitude, correctedMask, _activeData.ProjectionRaycastTriggerInteraction);
                     }
                 case DistributionMode.Plane:
                 case DistributionMode.Ellipse:

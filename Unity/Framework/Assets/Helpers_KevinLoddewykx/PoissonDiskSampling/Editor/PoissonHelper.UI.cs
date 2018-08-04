@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using System.Linq;
 using Helpers_KevinLoddewykx.General;
-using Helpers_KevinLoddewykx.General.WeightedArray;
+using Helpers_KevinLoddewykx.General.WeightedArrayCore;
 using System.Collections.Generic;
 using static Helpers_KevinLoddewykx.PoissonDiskSampling.PoissonData;
 using UnityEditorInternal;
@@ -27,9 +27,6 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         private GUIStyle SubLeftColumnStyle;
         private GUIStyle LeftColumnFoldoutStyle;
 
-        private GUIStyle LeftNumberFieldStyle;
-        private GUIStyle RightNumberFieldStyle;
-
         private GUIStyle ButtonStyle;
         private GUIStyle NumberFieldStyle;
         private GUIStyle PopupStyle;
@@ -50,8 +47,6 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             RowStyle = new GUIStyle();
             SingleRowStyle = new GUIStyle();
             LeftColumnFoldoutStyle = new GUIStyle();
-            LeftNumberFieldStyle = new GUIStyle(EditorStyles.numberField);
-            RightNumberFieldStyle = new GUIStyle(EditorStyles.numberField);
             BoxStyle = new GUIStyle(GUI.skin.box);
             SubBoxStyle = new GUIStyle(GUI.skin.box);
 
@@ -92,7 +87,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 SubBoxStyle.padding.right = BoxMargin;
 
                 SubLeftColumnStyle.margin.left = LeftMarginInspector - BoxMargin;
-                SubLeftColumnStyle.margin.right = 0;
+                SubLeftColumnStyle.margin.right = ColumnGap;
                 SubLeftColumnStyle.padding.left = 0;
                 SubLeftColumnStyle.padding.right = 0;
 
@@ -114,12 +109,6 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             RightColumnStyle.padding.right = 0;
 
             // Control Styles
-            LeftNumberFieldStyle.margin.left = 0;
-            LeftNumberFieldStyle.margin.right = 0;
-
-            RightNumberFieldStyle.margin.left = 0;
-            RightNumberFieldStyle.margin.right = 0;
-
             FoldoutStyle = new GUIStyle(EditorStyles.foldout);
             FoldoutStyle.margin.left = (DataHolder.IsWindow) ? 0 : LeftMarginInspector;
             FoldoutStyle.margin.right = 0;
@@ -167,9 +156,8 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             if (DataHolder.IsWindow)
             {
                 _masterScroll = EditorGUILayout.BeginScrollView(_masterScroll);
-                EditorGUILayout.Space();
             }
-
+            EditorGUILayout.Space();
             using (EditorGUI.ChangeCheckScope changeScope = new EditorGUI.ChangeCheckScope())
             {
                 float halfWidth = (Mathf.Max(MinimumWidth, EditorGUIUtility.currentViewWidth) - ColumnGap) * 0.5f;
@@ -194,52 +182,27 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
                 if (!IsPrefab)
                 {
-                    CreateDistributionButtons(halfWidth, changeScope);
+                    hasChanged |= CreateDistributionButtons(halfWidth, changeScope);
                 }
             }
+
+            EditorGUILayout.Space();
             if (DataHolder.IsWindow)
             {
                 EditorGUILayout.EndScrollView();
             }
-            EditorGUILayout.Space();
 
             if (!IsPrefab)
             {
                 EditorData.HelperVisual.transform.hasChanged = false;
             }
-
+            
             if (hasChanged)
             {
                 Undo.RecordObject((UnityEngine.Object)DataHolder, "PDS Param");
                 StoreDataHolder();
                 DataHolder.VisualTransformChanged();
             }
-        }
-
-        private void StoreDataHolder()
-        {
-            PoissonModeData.Copy(ModeData, DataHolder.ModeData);
-            PoissonUIData.Copy(UIData, DataHolder.UIData);
-
-            DataHolder.Data.Resize(Data.Count);
-            for (int i = 0; i < Data.Count; ++i)
-            {
-                PoissonData.Copy(Data[i], DataHolder.Data[i]);
-            }
-        }
-
-        private void LoadDataHolder()
-        {
-            ModeData = DataHolder.ModeData.DeepCopy();
-            UIData = DataHolder.UIData.DeepCopy();
-
-            Data = new List<PoissonData>(DataHolder.Data.Count);
-            foreach (PoissonData level in DataHolder.Data)
-            {
-                Data.Add(level.DeepCopy());
-            }
-
-            SelectedData = Data[UIData.SelectedLevelIndex];
         }
 
         private void CreateModeUI(float halfWidth)
@@ -257,18 +220,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             using (new EditorGUI.DisabledScope(isDisabled))
             {
                 EditorGUI.BeginChangeCheck();
-                if (DataHolder.IsWindow)
-                {
-                    ModeData.Mode = (DistributionMode)EditorGUILayout.EnumPopup(ModeData.Mode, PopupStyle);
-                }
-                else
-                {
-                    List<string> modes = Enum.GetNames(typeof(DistributionMode)).ToList();
-                    modes.Remove(DistributionMode.Surface.ToString());
-
-                    ModeData.Mode = (DistributionMode)Enum.Parse(typeof(DistributionMode),
-                        modes[EditorGUILayout.Popup(modes.IndexOf(ModeData.Mode.ToString()), modes.ToArray(), PopupStyle)]);
-                }
+                ModeData.Mode = (DistributionMode)EditorGUILayout.EnumPopup(ModeData.Mode, PopupStyle);
                 if (EditorGUI.EndChangeCheck())
                 {
                     EditorData.UpdateVisualMode(ModeData);
@@ -343,6 +295,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             EditorGUILayout.EndVertical();
 
             EditorGUILayout.BeginVertical(RightColumnStyle, GUILayout.MaxWidth(halfWidth));
+            EditorGUILayout.LabelField("");
             EditorGUILayout.EndVertical();
             EditorGUILayout.EndHorizontal();
 
@@ -356,7 +309,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 {
                     if (GUILayout.Button("Delete Selected Level", ButtonStyle))
                     {
-                        CleanupPlacedObjects(UIData.SelectedLevelIndex);
+                        CleanupPlacedObjects(EditorData, UIData.SelectedLevelIndex);
                         EditorData.HighestDistributedLevel = Math.Min(UIData.SelectedLevelIndex - 1, EditorData.HighestDistributedLevel);
 
                         Data.RemoveAt(UIData.SelectedLevelIndex);
@@ -375,7 +328,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 string addMode = UIData.DuplicateLevel ? "Duplicate Selected" : "Insert";
                 if (GUILayout.Button(addMode + " Level At " + UIData.InsertLevelAt, ButtonStyle))
                 {
-                    CleanupPlacedObjects(UIData.InsertLevelAt);
+                    CleanupPlacedObjects(EditorData, UIData.InsertLevelAt);
                     EditorData.HighestDistributedLevel = Mathf.Min(EditorData.HighestDistributedLevel, UIData.InsertLevelAt - 1);
 
                     if (UIData.DuplicateLevel)
@@ -475,7 +428,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 }
 
                 SelectedData.DistToKeepNextLevel = EditorGUILayout.FloatField(new GUIContent("Distance Next Level:", "The distance the next level needs to keep from the distributed points."), SelectedData.DistToKeepNextLevel, NumberFieldStyle);
-                float maxDist = (SelectedData.Map == null) ? SelectedData.MinDist : SelectedData.MaxDist;
+                float maxDist = (SelectedData.Map == null) ? SelectedData.MinDist : Mathf.Max(SelectedData.MaxDist, SelectedData.MinDist);
                 SelectedData.DistToKeepNextLevel = Mathf.Min(SelectedData.DistToKeepNextLevel, maxDist);
                 EditorGUILayout.EndVertical();
                 EditorGUILayout.EndHorizontal();
@@ -483,11 +436,13 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 EditorGUILayout.BeginHorizontal(RowStyle);
                 EditorGUILayout.BeginVertical(LeftColumnStyle, GUILayout.MaxWidth(halfWidth));
                 EditorGUI.BeginChangeCheck();
-                SelectedData.PoissonObjects = (BaseWeightedCollection)EditorGUILayout.ObjectField("Poisson Data:", SelectedData.PoissonObjects, typeof(BaseWeightedCollection), false);
+                SelectedData.PoissonObjects = (WeightedScriptableObject)EditorGUILayout.ObjectField("Poisson Data:", SelectedData.PoissonObjects, typeof(WeightedScriptableObject), false);
                 int poissonObjectsCount = 0;
-                if (SelectedData.PoissonObjects?.Element.WeightedArray.HasWeightedElementsNonNull() ?? false)
+                if (SelectedData.PoissonObjects?.Element.HasWeightedElementsNonNull() ?? false)
                 {
-                    poissonObjectsCount = SelectedData.PoissonObjects.Element.WeightedArray.GetWeightedElementsCountNonNull();
+                    // While you can not set settings for objects which equals to null, still reserve space for them in PoissonObjectOptions. 
+                    // So we can access them with index of the gameobject position inside the WeightedArray .
+                    poissonObjectsCount = SelectedData.PoissonObjects.Element.Objects.Count;
                 }
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -502,9 +457,12 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
                 }
                 EditorGUILayout.EndVertical();
+                EditorGUILayout.BeginVertical(RightColumnStyle, GUILayout.MaxWidth(halfWidth));
+                EditorGUILayout.LabelField("");
+                EditorGUILayout.EndVertical();
                 EditorGUILayout.EndHorizontal();
 
-                CreateOptions(SelectedData.PoissonObjects?.Element.WeightedArray, SelectedData.PoissonObjectOptions, ref UIData.PoissonSelected, halfWidth);
+                CreateOptions(SelectedData.PoissonObjects?.Element, SelectedData.PoissonObjectOptions, ref UIData.PoissonSelected, halfWidth);
             }
             EditorGUILayout.EndVertical();
         }
@@ -531,11 +489,13 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 EditorGUILayout.BeginHorizontal(RowStyle);
                 EditorGUILayout.BeginVertical(LeftColumnStyle, GUILayout.MaxWidth(halfWidth));
                 EditorGUI.BeginChangeCheck();
-                SelectedData.ClumpObjects = (BaseWeightedCollection)EditorGUILayout.ObjectField("Clumping Data:", SelectedData.ClumpObjects, typeof(BaseWeightedCollection), false);
+                SelectedData.ClumpObjects = (WeightedScriptableObject)EditorGUILayout.ObjectField("Clumping Data:", SelectedData.ClumpObjects, typeof(WeightedScriptableObject), false);
                 int clumpObjectsCount = 0;
-                if (SelectedData.ClumpObjects?.Element.WeightedArray.HasWeightedElementsNonNull() ?? false)
+                if (SelectedData.ClumpObjects?.Element.HasWeightedElementsNonNull() ?? false)
                 {
-                    clumpObjectsCount = SelectedData.ClumpObjects.Element.WeightedArray.GetWeightedElementsCountNonNull();
+                    // While you can not set settings for objects which equals to null, still reserve space for them in ClumpObjectOptions. 
+                    // So we can access them with index of the gameobject position inside the WeightedArray .
+                    clumpObjectsCount = SelectedData.ClumpObjects.Element.Objects.Count;
                 }
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -549,9 +509,12 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     SelectedData.ClumpObjectOptions = options.ToArray();
                 }
                 EditorGUILayout.EndVertical();
+                EditorGUILayout.BeginVertical(RightColumnStyle, GUILayout.MaxWidth(halfWidth));
+                EditorGUILayout.LabelField("");
+                EditorGUILayout.EndVertical();
                 EditorGUILayout.EndHorizontal();
 
-                CreateOptions(SelectedData.ClumpObjects?.Element.WeightedArray, SelectedData.ClumpObjectOptions, ref UIData.ClumpSelected, halfWidth);
+                CreateOptions(SelectedData.ClumpObjects?.Element, SelectedData.ClumpObjectOptions, ref UIData.ClumpSelected, halfWidth);
             }
             EditorGUILayout.EndVertical();
         }
@@ -577,11 +540,11 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 if (!disabled)
                 {
                     objectsNonNull = objects.Objects
-                        .Where((o) => o.Object != null && o.Weight > 0)
-                        .Select((o, i) => new System.Tuple<WeightedObject, int>(o, i));
+                        .Select((o, i) => new Tuple<WeightedObject, int>(o, i))
+                        .Where((o) => o.Item1.Object != null && o.Item1.Weight > 0);
 
                     objectStrings = objectsNonNull
-                        .Select((a) => objects.GetChance(a.Item1).ToString("F2") + "%) " + a.Item1.Object.name)
+                        .Select((a, i) => i + ": " + objects.GetChance(a.Item1).ToString("F2") + "%) " + a.Item1.Object.name)
                         .ToArray();
 
                     if (selectedIndex >= objectStrings.Count())
@@ -597,30 +560,37 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
                 ObjectOptions selectedOptions;
                 EditorGUILayout.BeginHorizontal(RowStyle);
+                EditorGUILayout.BeginVertical(SubLeftColumnStyle, GUILayout.MaxWidth(halfWidth));
+                
+                // Pass in an empty label or set EditorGUIUtility.fieldWidth to the EditorGUIUtility.labelWidth (== LABEL_WIDTH)
+                // otherwise the width will be incorrect when the vertical scrollbar is visible
+                selectedIndex = EditorGUILayout.Popup("", selectedIndex, objectStrings, PopupStyle);
+                if (disabled)
+                {
+                    selectedOptions = new ObjectOptions();
+                }
+                else
+                {
+                    selectedOptions = options[objectsNonNull.ElementAt(selectedIndex).Item2];
+                }
+                EditorGUIUtility.fieldWidth = 0;
+                EditorGUILayout.EndVertical();
+                EditorGUILayout.BeginVertical(RightColumnStyle, GUILayout.MaxWidth(halfWidth));
+                EditorGUILayout.LabelField("");
+                EditorGUILayout.EndVertical();
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.BeginHorizontal(RowStyle);
                 using (new EditorGUILayout.VerticalScope(SubLeftColumnStyle, GUILayout.MaxWidth(halfWidth)))
                 {
+                    selectedOptions.Parent = (Transform)EditorGUILayout.ObjectField("Parent:", selectedOptions.Parent, typeof(Transform), true);
 
-                    selectedIndex = EditorGUILayout.Popup(selectedIndex, objectStrings, PopupStyle);
-                    if (disabled)
+                    if (selectedOptions.Parent != null)
                     {
-                        selectedOptions = new ObjectOptions();
-                    }
-                    else
-                    {
-                        selectedOptions = options[objectsNonNull.ElementAt(selectedIndex).Item2];
-                    }
-
-                    if (DataHolder.IsWindow)
-                    {
-                        selectedOptions.Parent = (Transform)EditorGUILayout.ObjectField("Parent:", selectedOptions.Parent, typeof(Transform), true);
-
-                        if (selectedOptions.Parent != null)
+                        PrefabType prefabType = PrefabUtility.GetPrefabType(selectedOptions.Parent);
+                        if (prefabType == PrefabType.Prefab || prefabType == PrefabType.ModelPrefab)
                         {
-                            PrefabType prefabType = PrefabUtility.GetPrefabType(selectedOptions.Parent);
-                            if (prefabType == PrefabType.Prefab || prefabType == PrefabType.ModelPrefab)
-                            {
-                                selectedOptions.Parent = null;
-                            }
+                            selectedOptions.Parent = null;
                         }
                     }
 
@@ -654,12 +624,12 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 }
                 using (new EditorGUILayout.VerticalScope(RightColumnStyle, GUILayout.MaxWidth(halfWidth)))
                 {
+                    // Magic number 9
                     EditorGUIUtility.fieldWidth = (halfWidth - LABEL_WIDTH) * 0.5f - 9.0f;
-                    EditorGUILayout.PrefixLabel("");
 
                     EditorGUILayout.BeginHorizontal(RowStyle);
-                    EditorGUIUtility.labelWidth = LABEL_WIDTH;
-                    EditorGUILayout.PrefixLabel(" ");
+                    // Add non-empty label to skip the first column
+                    EditorGUILayout.PrefixLabel(" ", EditorStyles.objectField, RowStyle);
                     // Because unity layouting is pain
                     EditorGUIUtility.labelWidth = 0.0000001f;
                     EditorGUILayout.LabelField("Min", centerStyle, GUILayout.ExpandWidth(true));
@@ -667,33 +637,39 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     EditorGUILayout.EndHorizontal();
 
                     EditorGUIUtility.labelWidth = LABEL_WIDTH;
+
                     EditorGUILayout.BeginHorizontal(RowStyle);
-                    EditorGUILayout.PrefixLabel("Scale:");
-                    selectedOptions.MinScale = EditorGUILayout.FloatField(selectedOptions.MinScale, LeftNumberFieldStyle);
-                    selectedOptions.MaxScale = EditorGUILayout.FloatField(selectedOptions.MaxScale, RightNumberFieldStyle);
+                    EditorGUILayout.PrefixLabel("Scale:", RowStyle);
+                    selectedOptions.MinScale = EditorGUILayout.FloatField(selectedOptions.MinScale, NumberFieldStyle);
+                    selectedOptions.MaxScale = EditorGUILayout.FloatField(selectedOptions.MaxScale, NumberFieldStyle);
                     EditorGUILayout.EndHorizontal();
 
                     EditorGUILayout.BeginHorizontal(RowStyle);
-                    EditorGUILayout.PrefixLabel("Height offset:");
-                    selectedOptions.MinHeightOffset = EditorGUILayout.FloatField(selectedOptions.MinHeightOffset, LeftNumberFieldStyle);
-                    selectedOptions.MaxHeightOffset = EditorGUILayout.FloatField(selectedOptions.MaxHeightOffset, RightNumberFieldStyle);
+                    EditorGUILayout.PrefixLabel("Height offset:", RowStyle);
+                    selectedOptions.MinHeightOffset = EditorGUILayout.FloatField(selectedOptions.MinHeightOffset, NumberFieldStyle);
+                    selectedOptions.MaxHeightOffset = EditorGUILayout.FloatField(selectedOptions.MaxHeightOffset, NumberFieldStyle);
                     EditorGUILayout.EndHorizontal();
 
                     EditorGUILayout.BeginHorizontal(RowStyle);
-                    EditorGUILayout.PrefixLabel("Face . Up:");
-                    selectedOptions.MinDot = EditorGUILayout.FloatField(selectedOptions.MinDot, LeftNumberFieldStyle);
-                    selectedOptions.MaxDot = EditorGUILayout.FloatField(selectedOptions.MaxDot, RightNumberFieldStyle);
+                    EditorGUILayout.PrefixLabel("Face . Up:", RowStyle);
+                    selectedOptions.MinDot = EditorGUILayout.FloatField(selectedOptions.MinDot, NumberFieldStyle);
+                    selectedOptions.MaxDot = EditorGUILayout.FloatField(selectedOptions.MaxDot, NumberFieldStyle);
                     EditorGUILayout.EndHorizontal();
 
                     EditorGUIUtility.fieldWidth = 0;
+                    using (new EditorGUI.DisabledScope(selectedOptions.ScaleY == false))
+                    {
+                        selectedOptions.ScaleHeightOffset = EditorGUILayout.Toggle(new GUIContent("Scale height offset:", "If enabled the height offset is scaled by the calculated Y scale"), selectedOptions.ScaleHeightOffset, ToggleStyle);
+                    }
                 }
                 EditorGUILayout.EndHorizontal();
             }
             EditorGUILayout.EndVertical();
         }
 
-        private void CreateDistributionButtons(float halfWidth, EditorGUI.ChangeCheckScope changeScope)
+        private bool CreateDistributionButtons(float halfWidth, EditorGUI.ChangeCheckScope changeScope)
         {
+            bool resetted = false;
             GUILayout.Label("", GUI.skin.horizontalSlider);
 
             EditorGUILayout.BeginVertical(RowStyle, GUILayout.MaxWidth(halfWidth * 2 + ColumnGap));
@@ -775,9 +751,9 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             }
             using (new EditorGUI.DisabledScope(EditorData.HighestDistributedLevel == -1 || EditorData.Grids[EditorData.HighestDistributedLevel].ReadOnly))
             {
-                if (GUILayout.Button(new GUIContent("Clear unapplied distributed"), ButtonStyle))
+                if (GUILayout.Button(new GUIContent("Clear Unapplied Levels"), ButtonStyle))
                 {
-                    CleanupPlacedObjects(0);
+                    CleanupPlacedObjects(EditorData, 0);
 
                     EditorData.HighestDistributedLevel = -1;
                     for (int i = 0; i < EditorData.Grids.Count; ++i)
@@ -794,15 +770,16 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
                     if (EditorData.HighestDistributedLevel == -1)
                     {
-                        EditorData.UpdateAllowVisualTransformChanges();
+                        EditorData.UpdateAllowVisualTransformChanges(DataHolder.IsWindow);
                     }
                 }
             }
             using (new EditorGUI.DisabledScope(EditorData.HighestDistributedLevel == -1))
             {
-                if (GUILayout.Button(new GUIContent("Reset settings"), ButtonStyle))
+                if (GUILayout.Button(new GUIContent("Reset Settings"), ButtonStyle))
                 {
-                    Reset();
+                    Reset(false);
+                    resetted = true;
                 }
             }
 
@@ -811,16 +788,21 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 EditorGUILayout.EndVertical();
                 EditorGUILayout.EndHorizontal();
             }
+            return resetted;
         }
 
-        public void Reset()
+        public void Reset(bool loadAndStore = true)
         {
+            if (loadAndStore)
+            {
+                LoadDataHolder();
+            }
             EditorData.HighestDistributedLevel = -1;
 
             EditorData.Grids.Clear();
             Data.Clear();
 
-            CleanupPlacedObjects(0);
+            CleanupPlacedObjects(EditorData, 0);
             EditorData.PlacedObjects.Clear();
 
             UIData.SelectedLevelIndex = 0;
@@ -832,8 +814,13 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
             ModeData.RealtimePreview = false;
 
-            EditorData.UpdateAllowVisualTransformChanges();
+            EditorData.UpdateAllowVisualTransformChanges(DataHolder.IsWindow);
             EditorData.UpdateVisualTexture(ModeData, SelectedData);
+
+            if (loadAndStore)
+            {
+                StoreDataHolder();
+            }
         }
     }
 }

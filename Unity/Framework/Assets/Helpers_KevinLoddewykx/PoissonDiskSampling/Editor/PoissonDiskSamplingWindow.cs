@@ -72,7 +72,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
         private void OnDestroy()
         {
-            _helper.CleanupPlacedObjects(0);
+            PoissonHelper.CleanupPlacedObjects(_helper.EditorData, 0);
         }
 
         private void OnGUI()

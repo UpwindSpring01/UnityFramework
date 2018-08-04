@@ -13,11 +13,13 @@ namespace Helpers_KevinLoddewykx.General
 
         public override void OnInspectorGUI()
         {
-            const float widthSingleBtn = 18;
+            const float widthSingleBtn = 16;
 
             GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
             buttonStyle.margin.left = 0;
             buttonStyle.margin.right = 0;
+            buttonStyle.padding.left = 3;
+            buttonStyle.padding.right = 3;
 
             Transform t = (Transform)target;
 

@@ -1,8 +1,10 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
+using System.Linq;
+using System;
 
-namespace Helpers_KevinLoddewykx.General.WeightedArray
+namespace Helpers_KevinLoddewykx.General.WeightedArrayCore
 {
     [CustomEditor(typeof(WeightedScriptableObject), true)]
     public class WeightedDataEditor : Editor
@@ -12,26 +14,28 @@ namespace Helpers_KevinLoddewykx.General.WeightedArray
             DrawDefaultInspector();
 
             WeightedScriptableObject weightedData = (WeightedScriptableObject)target;
-            foreach (WeightedArrayObject ele in weightedData.Elements)
+
+            Undo.RecordObject(weightedData, "Weighted Scriptable object changed");
+            foreach (Tuple<WeightedArray, string> ele in weightedData.Elements.Zip(weightedData.Names, Tuple.Create))
             {
                 using (EditorGUI.ChangeCheckScope changeScope = new EditorGUI.ChangeCheckScope())
                 {
                     CreateGUI(ele);
                     if(changeScope.changed)
                     {
-                        ele.WeightedArray.RecalcTotalWeight();
-
-                        EditorUtility.SetDirty(target);
+                        ele.Item1.RecalcTotalWeight();
                     }
                 }
             }
         }
 
-        private void CreateGUI(WeightedArrayObject objArrayObject)
+        private void CreateGUI(Tuple<WeightedArray, string> objArrayObject)
         {
-            WeightedArray weightedArray = objArrayObject.WeightedArray;
+            WeightedArray weightedArray = objArrayObject.Item1;
             // title
-            GUILayout.Label(objArrayObject.Name, EditorStyles.boldLabel);
+            GUIStyle boldLargeLabel = new GUIStyle(EditorStyles.largeLabel);
+            boldLargeLabel.fontStyle = FontStyle.Bold;
+            GUILayout.Label(objArrayObject.Item2, boldLargeLabel);
 
             // list
             if (weightedArray.HasElements())

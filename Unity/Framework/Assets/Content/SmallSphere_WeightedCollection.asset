@@ -15,8 +15,13 @@ MonoBehaviour:
   - _name: Weighted Gameobjects (Allow Empty)
     _weightedArray:
       _objects:
+      - Object: {fileID: 1480393257502300, guid: 1d22bc580c62e7444ac61d9bb9ec5607,
+          type: 2}
+        Weight: 1
       - Object: {fileID: 1046169861554080, guid: a1541aa148a7a474ead2106666420a7e,
           type: 2}
         Weight: 1
-      _totalWeight: 1
+      - Object: {fileID: 0}
+        Weight: 8
+      _totalWeight: 10
       _allowNull: 1

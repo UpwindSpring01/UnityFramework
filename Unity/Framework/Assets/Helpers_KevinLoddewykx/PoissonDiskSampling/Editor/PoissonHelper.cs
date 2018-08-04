@@ -1,3 +1,4 @@
+using Helpers_KevinLoddewykx.General;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -33,9 +34,13 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         {
             if (!IsPrefab)
             {
-                PoissonHelperInternalStorage.Instance.RemoveAndAdd(DataHolder, this);
+                bool existed = PoissonHelperInternalStorage.Instance.RemoveAndAdd(DataHolder, this);
 
-                EditorData.InitVisual(DataHolder.ModeData, DataHolder.Data[DataHolder.UIData.SelectedLevelIndex], (DataHolder.IsWindow) ? null : (PoissonPlacer)DataHolder);
+                EditorData.InitVisual(DataHolder.ModeData, DataHolder.Data[DataHolder.UIData.SelectedLevelIndex], (DataHolder.IsWindow) ? null : (PoissonPlacer)DataHolder, DataHolder.IsWindow, !existed);
+                if(!DataHolder.IsWindow)
+                {
+                    DataHolder.ModeData.Surface = ((PoissonPlacer)DataHolder).gameObject;
+                }
             }
         }
 
@@ -111,8 +116,34 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
         public void RefreshDistribution()
         {
             LoadDataHolder();
-            EditorData.RefreshVisual(ModeData, SelectedData);
+            EditorData.RefreshVisual(ModeData, SelectedData, DataHolder.IsWindow);
             DistributeRealtime();
+        }
+
+        private void StoreDataHolder()
+        {
+            PoissonModeData.Copy(ModeData, DataHolder.ModeData);
+            PoissonUIData.Copy(UIData, DataHolder.UIData);
+
+            DataHolder.Data.Resize(Data.Count);
+            for (int i = 0; i < Data.Count; ++i)
+            {
+                PoissonData.Copy(Data[i], DataHolder.Data[i]);
+            }
+        }
+
+        private void LoadDataHolder()
+        {
+            ModeData = DataHolder.ModeData.DeepCopy();
+            UIData = DataHolder.UIData.DeepCopy();
+
+            Data = new List<PoissonData>(DataHolder.Data.Count);
+            foreach (PoissonData level in DataHolder.Data)
+            {
+                Data.Add(level.DeepCopy());
+            }
+
+            SelectedData = Data[UIData.SelectedLevelIndex];
         }
     }
 }

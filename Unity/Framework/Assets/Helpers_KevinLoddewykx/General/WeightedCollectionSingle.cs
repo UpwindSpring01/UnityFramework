@@ -3,10 +3,11 @@ using UnityEngine;
 
 namespace Helpers_KevinLoddewykx.General
 {
-    [CreateAssetMenu(menuName = "Resources/Weighted Collection")]
-    public class WeightedCollection : WeightedScriptableObject
+    [CreateAssetMenu(menuName = "Resources/Weighted Collection (Single, No Empty)")]
+    public class WeightedCollectionSingle : WeightedScriptableObject
     {
         [SerializeField]
+        [HideInInspector]
         private WeightedArray[] _elements = new WeightedArray[] { new WeightedArray(false) };
 
         public override WeightedArray[] Elements
@@ -16,6 +17,7 @@ namespace Helpers_KevinLoddewykx.General
 
 #if UNITY_EDITOR
         [SerializeField]
+        [HideInInspector]
         private string[] _names = new string[] { "Weighted Gameobjects" };
 
         public override string[] Names

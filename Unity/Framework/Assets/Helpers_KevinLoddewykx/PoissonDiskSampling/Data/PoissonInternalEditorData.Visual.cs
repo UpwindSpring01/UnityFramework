@@ -6,9 +6,15 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 {
     public partial class PoissonInternalEditorData
     {
-        public void InitVisual(PoissonModeData modeData, PoissonData data, PoissonPlacer placer)
+        public void InitVisual(PoissonModeData modeData, PoissonData data, PoissonPlacer placer, bool isWindow, bool refreshTopMaterial)
         {
-            if (HelperVisual == null)
+            if(!isWindow && HelperVisual && refreshTopMaterial)
+            {
+                // Always create new TopMaterial, because when we copy the placer, we don't want the TopMaterial shared
+                TopMaterial = new Material(TopMaterial);
+                UpdateVisualMode(modeData);
+            }
+            if (!HelperVisual)
             {
                 CreateBoxMesh();
                 CreateCylinderMesh();
@@ -25,7 +31,6 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 FaceMaterial.hideFlags = HideFlags.HideInInspector;
 
                 GameObject parentObj = new GameObject();
-                parentObj.hideFlags = HideFlags.HideInHierarchy | HideFlags.HideInInspector | HideFlags.NotEditable | HideFlags.DontSave;
                 if (placer)
                 {
                     parentObj.transform.parent = placer.transform;
@@ -37,7 +42,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 }
 
                 HelperVisual = new GameObject();
-             //   HelperVisual.hideFlags = HideFlags.DontSave;
+                
 
                 HelperVisual.transform.parent = parentObj.transform;
 
@@ -47,11 +52,14 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
                 Renderer = HelperVisual.AddComponent<MeshRenderer>();
 
-                DeleteHelper = HelperVisual.AddComponent<PoissonDeleteHelper>();
+                if (!isWindow)
+                {
+                    DeleteHelper = HelperVisual.AddComponent<PoissonDeleteHelper>();
+                }
                 
-                RefreshVisual(modeData, data);
+                RefreshVisual(modeData, data, isWindow);
             }
-            if (placer)
+            if (placer && !isWindow)
             {
                 DeleteHelper.Placer = placer;
             }
@@ -420,12 +428,12 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             TopMaterial = null;
         }
 
-        public void RefreshVisual(PoissonModeData modeData, PoissonData data)
+        public void RefreshVisual(PoissonModeData modeData, PoissonData data, bool isWindow)
         {
             UpdateVisualMode(modeData);
             UpdateVisualPercentages(modeData);
             UpdateVisualTexture(modeData, data);
-            UpdateAllowVisualTransformChanges();
+            UpdateAllowVisualTransformChanges(isWindow);
 
             HelperVisual.transform.localPosition = modeData.Position;
             HelperVisual.transform.localRotation = modeData.Rotation;
@@ -434,23 +442,33 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
         public void UpdateVisualPercentages(PoissonModeData modeData)
         {
-            TopMaterial.SetFloat("_PercentageX", modeData.RejectPercentageX);
-            TopMaterial.SetFloat("_PercentageZ", modeData.RejectPercentageY);
+            if (TopMaterial)
+            {
+                TopMaterial.SetFloat("_PercentageX", modeData.RejectPercentageX);
+                TopMaterial.SetFloat("_PercentageZ", modeData.RejectPercentageY);
+            }
         }
 
         public void UpdateVisualTexture(PoissonModeData modeData, PoissonData data)
         {
-            TopMaterial.mainTexture = data.Map;
-            TopMaterial.SetInt("_UseMap", (data.Map != null) ? 1 : 0);
-
-            if (modeData.Mode != DistributionMode.Surface)
+            if (TopMaterial)
             {
-                SceneView.RepaintAll();
+                TopMaterial.mainTexture = data.Map;
+                TopMaterial.SetInt("_UseMap", (data.Map != null) ? 1 : 0);
+
+                if (modeData.Mode != DistributionMode.Surface)
+                {
+                    SceneView.RepaintAll();
+                }
             }
         }
 
         public void UpdateVisualMode(PoissonModeData modeData)
         {
+            if(!HelperVisual)
+            {
+                return;
+            }
             HelperVisual.gameObject.SetActive(modeData.Mode != DistributionMode.Surface);
             if (modeData.Mode == DistributionMode.Surface)
             {
@@ -464,7 +482,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     Renderer.sharedMaterials = new Material[] { TopMaterial };
                     TopMaterial.SetInt("_IsEllipse", 0);
                     break;
-                case DistributionMode.ProjectionRect:
+                case DistributionMode.ProjectionPlane:
                     MeshFilter.sharedMesh = BoxMesh;
                     Renderer.sharedMaterials = new Material[] { TopMaterial, FaceMaterial };
                     TopMaterial.SetInt("_IsEllipse", 0);
@@ -482,20 +500,33 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             }
         }
 
-        public void UpdateAllowVisualTransformChanges()
+        public void UpdateAllowVisualTransformChanges(bool isWindow)
         {
+            if(!HelperVisual)
+            {
+                return;
+            }
+            HelperVisual.transform.parent.gameObject.hideFlags = HideFlags.HideInHierarchy | HideFlags.HideInInspector | HideFlags.NotEditable | HideFlags.DontSave;
+
             bool isDisabled = Grids[0].ReadOnly;
             if (isDisabled)
             {
-                HelperVisual.hideFlags |= HideFlags.NotEditable;
+                HelperVisual.hideFlags = HideFlags.DontSave | HideFlags.NotEditable;
+                HelperVisual.transform.hideFlags = HideFlags.NotEditable;
             }
             else
             {
-                HelperVisual.hideFlags &= ~HideFlags.NotEditable;
+                HelperVisual.hideFlags = HideFlags.DontSave &~HideFlags.NotEditable;
+                // Set transform to none, otherwise inspector won't update the values
+                HelperVisual.transform.hideFlags = HideFlags.None;
             }
+            
             MeshFilter.hideFlags = HideFlags.HideInInspector | HideFlags.DontSave | HideFlags.NotEditable;
             Renderer.hideFlags = HideFlags.HideInInspector | HideFlags.DontSave | HideFlags.NotEditable;
-            DeleteHelper.hideFlags = HideFlags.NotEditable | HideFlags.DontSave;
+            if (!isWindow)
+            {
+                DeleteHelper.hideFlags = HideFlags.NotEditable | HideFlags.DontSaveInBuild;
+            }
         }
     }
 }
