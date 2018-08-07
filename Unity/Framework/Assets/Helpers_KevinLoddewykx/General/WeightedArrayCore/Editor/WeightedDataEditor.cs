@@ -65,7 +65,7 @@ namespace Helpers_KevinLoddewykx.General.WeightedArrayCore
                     }
                     weightedArray.Objects[i].Weight = Mathf.Max(0, EditorGUILayout.IntField(weightedArray.Objects[i].Weight, GUILayout.Width(75)));
 
-                    if (GUILayout.Button(new GUIContent("X", "Remove"), GUILayout.Width(35)))
+                    if (GUILayout.Button(new GUIContent("X", "Remove"), GUILayout.Width(20)))
                     {
                         weightedArray.Objects.RemoveAt(i);
                         --i;
