@@ -1,0 +1,373 @@
+\documentclass{paper}
+\usepackage[outputdir=temp]{minted} % code formatting
+\usepackage[svgnames, dvipsnames, table]{xcolor}
+\usepackage{graphicx}
+\usepackage{epspdfconversion} % Support for eps graphics
+\usepackage{fancyhdr}
+\usepackage[color]{changebar} % for the vertical line on frontpage
+\usepackage{hyperref} % url and url coloring support
+\usepackage[export]{adjustbox}
+\usepackage[utf8]{inputenc} % allows accented words
+\usepackage[T1]{fontenc} % these two following packages make copy & paste and search of accented words possible
+\usepackage{lmodern}
+\usepackage{tocbibind} % make the bibliography appear in Table of Content
+\usepackage{parskip} % add gap after \par
+\usepackage[breakable]{tcolorbox} % needed for box which holds the code
+\usepackage{accsupp} % Used by minted internally, needed for disallowing copy paste of linenumbers, headers and footers
+\usepackage{pifont} % allow for printing special symbols
+\usepackage{libertine} % font package used for quote marks
+\usepackage{tikz}
+\usepackage{enumitem} % adds support of noitemsep to itemize
+\usepackage[a4paper]{geometry} % change margins
+
+\newcommand*\quotefont{\fontfamily{LinuxLibertineT-LF}} % selects Libertine as the quote font
+
+% Make line numbers, headers and footers non-copyable, works with Adobe Reader.
+% Fails in Edge, Chrome and Reader
+\newcommand\emptyaccsupp[1]{\BeginAccSupp{ActualText={}}#1\EndAccSupp{}}
+\let\theHFancyVerbLine\theFancyVerbLine
+\def\theFancyVerbLine{\rmfamily\tiny\emptyaccsupp{\arabic{FancyVerbLine}}}
+
+\tcbuselibrary{minted, skins}
+\usemintedstyle{vs}
+\setminted
+{fontsize=\footnotesize,
+	linenos,
+	breaklines=true,
+	breaksymbolleft=,
+	tabsize=4,
+	numbersep=3mm,
+}
+
+\tcbset{listing engine=minted,
+	colback=LightGrey,
+	colframe=black!70,
+	listing only,
+	left=5mm,
+	enhanced,
+	breakable,
+	overlay={\begin{tcbclipinterior}\fill[black!25] (frame.south west) rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}}]
+}
+
+\hypersetup{colorlinks = true, urlcolor = blue, linkcolor = blue, citecolor=blue}
+\newcommand{\frontpage}
+{
+	\begin{titlepage}
+	
+	\raggedleft
+	\changebar
+	\vspace{\baselineskip}
+
+	{\small Kevin Loddewykx}\\[0.167\textheight]
+	{\large \bfseries Documentation v1.0}\\[\baselineskip]
+	{\textcolor{Red}{\huge Unity\textregistered\ Framework}}\\[\baselineskip]
+	{\large \textit{Tested with Unity\textregistered\ v2018.2.1f1}}\\[\baselineskip]
+	%\includegraphics[scale=0.5]{unity-master-black}
+	\vfill
+	{\includegraphics[scale=0.5]{Logos/unity-master-black}}
+	\endchangebar
+	\end{titlepage}
+}
+
+\newlength{\imgwidth} % create new variable for storing image width, used in the command declared below
+\newcommand\scalegraphics[3][]
+{
+	\begin{figure}[H]
+	\centering
+	\settowidth{\imgwidth}{\includegraphics{images/#2}} % calculate image width and store in imgwidth
+	\setlength{\imgwidth}{\minof{#1\imgwidth}{\textwidth}} % take minimum of imgwidth scaled by the optional parameter and textwidth
+	\includegraphics[width=\imgwidth]{images/#2} % place graphics
+	\caption{#3}
+	\end{figure}
+}
+
+\newcommand*\bracket[1]{\lbrack#1\rbrack} % command to place the parameter between square brackets
+
+\newcommand*\quotesize{60} % if quote size changes, need a way to make shifts relative
+% Make commands for the quotes
+\newcommand*{\openquote}
+{
+	\tikz[remember picture,overlay,xshift=-4ex,yshift=-2.5ex]
+	\node (OQ) {\quotefont\fontsize{\quotesize}{\quotesize}\selectfont``};\kern0pt
+}
+
+\newcommand*{\closequote}[1]
+{
+	\tikz[remember picture,overlay,xshift=4ex,yshift={#1}]
+	\node (CQ) {\quotefont\fontsize{\quotesize}{\quotesize}\selectfont''};
+}
+
+% select a colour for the shading
+\colorlet{shadecolor}{Azure}
+
+\newcommand*\shadedauthorformat{\emph} % define format for the author argument
+
+% Now a command to allow left, right and centre alignment of the author
+\newcommand*\authoralign[1]
+{%
+  \if#1l
+    \def\authorfill{}\def\quotefill{\hfill}
+  \else
+    \if#1r
+      \def\authorfill{\hfill}\def\quotefill{}
+    \else
+      \if#1c
+        \gdef\authorfill{\hfill}\def\quotefill{\hfill}
+      \else\typeout{Invalid option}
+      \fi
+    \fi
+  \fi
+}
+% wrap everything in its own environment which takes one argument (author) and one optional argument
+% specifying the alignment [l, r or c]
+%
+\newenvironment{shadequote}[2][l]%
+{
+	\authoralign{#1}
+	\ifblank{#2}
+	   {\def\shadequoteauthor{}\def\yshift{-2ex}\def\quotefill{\hfill}}
+	   {\def\shadequoteauthor{\par\authorfill\shadedauthorformat{#2}}\def\yshift{2ex}}
+	\begin{snugshade}\begin{quote}\openquote
+}
+{
+	\shadequoteauthor\quotefill\closequote{\yshift}\end{quote}\end{snugshade}
+}
+
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[R]{\emptyaccsupp{Unity\textregistered\ Framework}}
+\fancyfoot{}
+\fancyfoot[R]{\emptyaccsupp{\thepage}}
+\fancyfoot[L]{\emptyaccsupp{Section \thesection}}
+\fancyfoot[C]{\emptyaccsupp{Kevin Loddewykx}}
+
+\begin{document}
+\frontpage
+
+\newpage
+\tableofcontents
+
+\raggedright
+
+\newpage
+\section{Introduction}\label{sec:wa}
+A open-source framework for Unity\textregistered\ , by Kevin Loddewykx. The framework can be found at \href{https://github.com/UpwindSpring01/UnityFramework}{GitHub}
+
+\newpage
+\section{Transform Inspector}
+A custom inspector for the Transform component, which allows the user to easily reset the position, rotation and scale. Or copy the settings from one gameobject to another or to the clipboard. The script is a customized version of the TransformInspector.cs script created by \href{http://www.lugus-studios.be/}{LuGusStudios}, which can be found in some of their open source projects on their \href{https://github.com/LuGusStudios/PinballPlanet/find/master}{GitHub}. Added the \bracket{\ding{115}} and \bracket{\ding{116}} buttons, and changed the padding, margins and the text of the other buttons.
+\scalegraphics{TransformInspector.png}{Custom transform inspector.}
+
+\begin{itemize}
+\item \bracket{0} and \bracket{1}: Sets the X, Y and Z values of the row it belongs to, to the specified number.
+\item \bracket{C} and \bracket{P}: Are for copying and pasting respectively. Allowing the user to copy the transform data from one gameobject to another. The buttons are backed by three Vector3 variables, so you can not copy a position and paste it into a rotation.
+\item \bracket{S} Copies the content of the row to the clipboard as a string, for example copying the position will put "Vector3(6,58f, 0f, 0f)" on the clipboard.
+\end{itemize}
+\begin{itemize}
+\item \bracket{Uniform X scale}: Takes the X scale and assigns it to the Y and Z values of the scale.
+\item \bracket{\ding{115}}: Selects the parent object if the gameobject has one, otherwise the button will be disabled. It will ignore/skip over parent objects with the hideFlag "HideInHierarchy" set.
+\item \bracket{\ding{116}}: Selects the first child without the hideFlag "HideInHierarchy" set, if none exists the button will be disabled.
+\item \bracket{+}: Adds a new empty child to the gameobject and selects it. With its local position and rotation set to zero and scale to one.
+\end{itemize}
+
+\newpage
+\section{Weighted Array}\label{sec:wa}
+A "WeightedArray", is an array consisting out of elements of the class "WeightedObject". A WeightedObject has a weight property which determines how much weight it contributes to the total weight of the array. The WeightedArray class has methods to get a random WeightedObject or index with the chances determined by its contribution to the totalweight of the array, and other useful methods. The constructor takes in a bool parameter which tells the array to ignore empty elements or to take them into account.
+\par
+Before calling any methods on the array, after changing something to its elements, make sure to call "RecalcTotalWeight" to initialize the total weight properly.
+
+\scalegraphics[0.7]{WeightedArray_CD.png}{The class diagram of WeightedArray and WeightedObject.}
+
+\newpage
+\section{Weighted ScriptableObject}\label{sec:wso}
+"WeightedScriptableObject" is and abstract class inheriting from "ScriptableObject", containing two abstract get properties, namely "Elements" of the datatype "WeightedArray\bracket{}" and "Names" of the datatype "string". The abstract class also contains some pass-through methods for calling the methods on the element accessed with the passed in "elementIndex" argument and a property to get the first element from the Elements array. The names property is only used inside the editor and is therefore compiled away in none editor builds.
+\par
+The class has a custom editor script for rendering the inspector, see image below. This script automatically triggers the "RecalcTotalWeight" method, when a change to the WeightedArray occurs, and shows the chance percentages of the gameobjects in the UI. You can add new items to list by dragging or assigning an item to the objectfield behind the "Add Element" label. Removing and item from the list can be done by pressing the \bracket{X}. When you set a gameobject to none inside the list and the array doesn't allow for empty elements, it will be automatically removed.
+
+\scalegraphics[0.7]{WeightedCollection.png}{Inspector of a derived class of WeightedScriptableObject.}
+The code below belongs to the scriptableobject in the image above, you can add the \bracket{HideInInspector} attribute to "\_elements" and "\_names", if you don't want the user to change the amount of arrays.
+\begin{tcolorbox}
+\begin{minted}{cpp}
+using Helpers_KevinLoddewykx.General.WeightedArrayCore;
+using UnityEngine;
+
+namespace Helpers_KevinLoddewykx.General
+{
+    [CreateAssetMenu(menuName = "Resources/Weighted Collection")]
+    public class WeightedCollection : WeightedScriptableObject
+    {
+        [SerializeField]
+        private WeightedArray[] _elements = new WeightedArray[] { new WeightedArray(false) };
+
+        public override WeightedArray[] Elements
+        {
+            get { return _elements; }
+        }
+
+#if UNITY_EDITOR
+        [SerializeField]
+        private string[] _names = new string[] { "Weighted Gameobjects" };
+
+        public override string[] Names
+        {
+            get { return _names; }
+        }
+#endif
+    }
+}
+\end{minted}
+\end{tcolorbox}
+\scalegraphics[0.7]{WeightedScriptableObject_CD.png}{The class diagram of WeightedScriptableObject and WeightedCollection.}
+
+\newpage
+\section{Poisson Disk Distribution}
+\begin{shadequote}[r]{\small\href{https://www.jasondavies.com/poisson-disc/}{Jason Davies}}
+Poisson-disc sampling produces points that are tightly-packed, but no closer to each other than a specified minimum distance, resulting in a more natural pattern.
+\end{shadequote}
+The distribution method is implemented inside the Editor project and therefore can not be used at runtime. The algorithm is computational intensive and will lock up unity\textregistered\ until it is finished.
+\par
+It can be run from an EditorWindow, which can be opened from "Menubar -> Tools -> Poisson Disk Distribution". Or from a gameobject inside the scene when you attach the PoissonPlacer component to it. 
+\par 
+It supports multiple levels/layers of Poisson disk sample points. Allowing distributing gameobjects between already placed objects from the previous level, when the minimum distance setting \bracket{\ref{subsec:pdd_p}} is smaller than that of the previous level.
+Each level has it owns WeightedScriptableObject \bracket{\ref{sec:wso}} for determining the gameobjects to place. Each gamebobject inside the WeightedArray \bracket{\ref{sec:wa}} has it owns settings \bracket{\ref{subsec:pdd_p}}.
+\par
+The main reference for the implementation is from: \cite{TUL09}.
+\scalegraphics[0.4]{PoissonWindow.png}{Left the monobehaviour inspector, right the editor window.}
+
+\newpage
+\subsection{Known issues}
+\begin{itemize}
+\item The inspector its horizontal scrollbar only shows up when the vertical is also needed.
+\item Presets don't work properly.
+\begin{itemize}[noitemsep]
+\item The distribution buttons aren't removed from the inspector when inspecting it.
+\item When assigning a preset it will overwrite the variables responsible for keeping track of the placed objects.
+\end{itemize}
+\item When the inspector or EditorWindow is rendered, it will set the left and right margins of EditorStyles.numberField and EditorStyles.layerMaskField to zero, otherwise the controls wouldn't align properly inside the user interface. These changes are permanent until the Editor is restarted or overwritten somewhere else. Tried resetting them at the end of OnInspectorGUI and OnGUI, but then the changes would not affect the rendering.
+\item When you have a visual helper selected and trigger a recompilation of the Engine a "NullReferenceException: (null)" will be logged in the console. This exception won't affect the workings of the editor or the distribution. This error is due to the visual being destroyed inside the OnDisable and recreated inside the OnEnable of the MonoBehaviour or EditorWindow.
+\item When you remove the PoissonPlacer component from a gameobject, and afterwards undo this operation a "CheckConsistency: Transform child can't be loaded" will be logged in the console. This is due to visual helper being a child of the gameobject containing the MonoBehaviour and having the hideFlags DontSave set. Which causes a mismatch in the childCount. The visual will be automatically re-added afterwards in the OnEnable of the MonoBehaviour.
+\item You can take copies of the visualizer
+\end{itemize}
+
+\newpage
+\subsection{Foldout: Mode}\label{subsec:pdd_m}
+There are 5 modes, for setting up the region in which the objects are distributed. The mode determines also if raycasting is used for placing the objects, so objects are only placed on top off other colliders. Each mode has its own specific sub-settings.
+\par
+The mode tab also contains a toggle for enabling the real-time preview. Like mentioned before the algorithm is computational heavy, so use it with care. Under the Poisson foldout \bracket{\ref{subsec:pdd_p}} you can set for each level the maximum amount of samples to calculate, when setting it to <= 0 the algorithm will run until completion.
+\par
+The modes {\large\textbf{Plane}}, {\large\textbf{Ellipse}}, {\large\textbf{Projection Plane}} and {\large\textbf{Projection Ellipse}} will show a visualizer inside the scene view and have similar sub-settings:
+\begin{itemize}
+\item \textbf{Layermask} (only projection modes)
+\item \textbf{Trigger query mode} (only projection modes)
+\item \textbf{Position} of the visualizer
+\item \textbf{Rotation} in euler angles of the visualizer
+\item \textbf{Scale} of the visualizer (projection modes: 3D, others: 2D ignores Y)
+\item \textbf{Exclude \_ \%} sliders \bracket{0 - 1} for excluding a region starting from the center
+\end{itemize}
+The visualizer will not show up in the Hierarchy panel, due to the hideFlag hideInhierarchy being set, but is still selectable and with an editable transform. So you can control the distribution region from inside the UI or inside he scene view by dragging, scaling or rotating the visualizer. Changes to the visualizer will be directly reflected in the UI and vice versa.
+The position, rotation and scale are in world space for the EditorWindow, due to the visualizer not having a parent. And in local space for the MonoBehaviour, due to the visualizer being attached to gameobject the MonoBehaviour resides on.
+\par
+The projection modes are using raycasting. The rays are casted with the method Physics.Raycast, from a sampled point inside the top of the visualizer taking into account the transform of the visualizer, with the height of the viualizer as ray length, and utilizing the layermask and trigger query mode for collision filtering. If the ray hits a collider and the point is valid a new gameobject will be instantatiated at that location.
+\scalegraphics[0.6]{Mode_Plane.png}{Mode: plane with exclude region set.}
+\scalegraphics[0.6]{Mode_ProjEllipse.png}{Mode: projection ellipse.}
+\par
+The mode {\large\textbf{Surface}} has one setting, namely the \textbf{Surface} GameObject to use. When using this mode from a Monobehaviour this setting is disabled and will show the gameobject it is attached to. For the EditorWindow the user can pick freely an object from the scene as long as it has an active collider. The region is then determined by combining the bounds of all the active colliders on the gameobject and it childs.
+\par
+This mode also uses raycasting, but doesn't take the rotation of the object into account and will always cast straight down from the top of the bounds, with a ray length of bounds.size.y. These rays aren't casted with Physics.Raycast, but the algorithm loops over all the active collliders inside the surface and uses the Raycast method from the Collider class to determine if a point is valid.
+\scalegraphics[0.6]{Mode_Surface.png}{Mode: surface}
+
+\newpage
+\subsection{Foldout: Level}
+When using multiple levels with decreasing min and max distances you can distribute multiple WeightedArrays in the same region, while taking into account the levels above.
+\par
+The dropdown field behind the foldout label, determines from which \textbf{Level} the settings are shown inside the General \bracket{\ref{subsec:pdd_g}}, Poisson \bracket{\ref{subsec:pdd_p}} and clumping \bracket{\ref{subsec:pdd_c}} foldouts. 
+\par
+When clicking \textbf{\bracket{Insert Level At \_}}, you insert a new level. You can choose where in the stack to insert it with the field \textbf{Insert At}. And with the toggle \textbf{Duplicate Selected} you can choose to duplicate the current level its settings or add a level with the default settings. After insertion the newly added level will be selected.
+\par
+The button \textbf{\bracket{Delete Selected Level}} will remove the active level. If a level has been applied, see section \bracket{\ref{subsec:pdd_b}}, you won't be able to insert a level before it or delete the level.
+\par
+Checking if the point is to near to a gameobject of a previous level is done with:\\
+\qquad max(PrevLevel.DistToKeepNextLevel, finalMinDist) < distToObject\\
+whereby:\\
+\qquad PrevLevel.DistToKeepNextLevel <= max(PrevLevel.MaxDist, PrevLevel.MinDist)\\
+and when no map is set:\\
+\qquad finalMinDist = CurrLevel.MinDist"\\
+or when a map is set:\\
+\qquad CurrLevel.MinDist + (mapSample(x, y).grayscale * (CurrLevel.MaxDist - CurrLevel.MinDist))
+\par
+The DistToKeepNextLevel can not be set higher then the maximum of the two inputted distance values due to a optimization which is being used and described in \cite{TUL09}. This optimization ensures that the algorithm doesn't need to do a distance check with all the placed objects.
+\scalegraphics[0.6]{Foldout.png}{2 levels, large spheres (min dist = 5, dist next level = 2) and small spheres (min dist = 1.1).}
+
+\newpage
+\subsection{Foldout: General}\label{subsec:pdd_g}
+The general foldout is level dependent, and affects the placement of objects declared under the Poisson and Clumping foldout.
+\par
+If you want to put in a seed value for the algorithm you can enable the toggle \textbf{Use seed}, which enables/disables to input field \textbf{Seed}, to input your own integer value as seed. The value is passed into the static InitState method of the UnityEngine.Random class.
+\par
+When the distributed gameobject contains a PoissonPlacer MonoBehaviour at its root, this placer can be automatically triggered. The value \textbf{Max nesting} controls how deep the triggering goes. Whereby zero = no triggering, 1 = one level deep, 2 = two levels deep, ... This is to prevent infinite loops when you have a cyclic dependency, like a WeightedScriptableObject containing a placer which distributes that scriptableobject and then trying to distribute the scriptableobject.
+\par
+The last 5 settings in the foldout are for controlling the overlaps checks, \textbf{box} and \textbf{sphere}, default these are turned off. When turned on the algorithm will calculate the objects its bounds, these can be calculated from the active Renderer or Collider components depending on the \textbf{Mode} setting. Then it will use these bounds in the corresponding Physics.Overlap\bracket{Box/Sphere} method, together with the settings \textbf{Layer Mask} and \textbf{Trigger query mode}. The overlap checks are always against the colliders in the scene, never against the renderers their bounds. When the calculated bounds overlap with something in the scene, the gameobject is not placed.
+\scalegraphics[0.6]{General.png}{Distributing nested placers}
+
+\newpage
+\subsection{Foldout: Poisson}\label{subsec:pdd_p}
+The Poisson foldout is level dependent and exists out of two parts, the first part affects how the samples are sampled and the maximum amount of samples. The second part contains the per object settings.
+\par
+The \textbf{Max Samples} and \textbf{Max Preview}, determines how many samples can be calculated before the algorithm is stopped, when one of distribution buttons \bracket{\ref{subsec:pdd_b}} is pressed or the realtime button \bracket{\ref{subsec:pdd_m}} is enabled respectively. When the inputfield is set to 0, the algorithm runs unitl completion. The \textbf{Samples/Object} sets how many new samples are calculated around the current sample point if it is valid.
+\par
+When a point is found, new points are sampled around the point in a circle/disk shape. The minimum radius and max radius of the disk is based on the input fields \textbf{Min Distance}, \textbf{Max Distance} and \textbf{Map}. The minimum radius equals to the inputted minimum distance when no map is given or\\
+\qquad "min distance" + (map.Sample(x, y).grayscale * ("max distance" - "min distance"))\\
+when a map is assigned. The maximum radius is two times the calculated minimum radius. When a map is given the color black equals to the minimum distance and white to maximum distance. The \textbf{Distance Next Level} tells the algorithm how far the levels below the current level need to keep their distance from the placed sampled points. This value can not be bigger then the maximum of "Min Distance" and "Max Distance". "Max Distance" can be smaller then "Min Distance". 
+\par
+When using a map/image, \textbf{Read/Write} needs to be enabled inside the Import Settings under the Advanced foldout, otherwise the image can not be sampled by the CPU.
+
+\scalegraphics[0.6]{Poisson_Map.png}{Distributing with a map}
+
+The inputfield \textbf{Poisson Data} requires a WeightedScriptableObject \bracket{\ref{sec:wso}}, for determining which objects can be placed, atleast one entry inside the WeightedArray needs to contain a value, none null. With the dropdown below it you can select the none null objects for visualizing and editing their associated settings.
+
+\begin{itemize}
+\item \textbf{Parent} sets to which gameobject the generated gameobjects need to be parented.
+\item \textbf{Rotate} toggles to which axis a random rotation is applied, X and Z can only be turned on when "Align Z to surface" is turned off.
+\item \textbf{Scale} toggles to which axis a random scale is applied.
+\item \textbf{Align z to surface} toggles if the up vector of the gameobject needs to algign with the surface normal.
+\item \textbf{Uniform scaling} when enabled will make the axis which have scaling enabled have the same random scale.
+\item \textbf{Scale (min - max)} sets the interval of the random scale.
+\item \textbf{Height offset (min - max)} sets the interval for a random height offset in the direction of the surface normal.
+\item \textbf{Face . dot (min - max)} sets the interval for how flat or steep the surface needs to be. Calculated by dot(surface up vector, world up vector)
+\item \textbf{Scale height offset} when enabled the height offset is scaled by the calculated random Y scale, only enabled when the Y scale toggle is enabled.
+\end{itemize}
+\scalegraphics[0.6]{Poisson_Sub.png}{Distribution with several settings turned on.}
+
+\newpage
+\subsection{Foldout: Clumping}\label{subsec:pdd_c}
+The Clumping foldout is level dependent, and controls a small very basic optional clumping algorithm, which is controlled by four input fields: \textbf{Min clumping}, \textbf{Max clumping}, \textbf{Min clump range} and \textbf{Max clump range}. The clumping logic is ran for each succesfully placed object, coming from the Poisson sampling. It will place objects around the created object its pivot point, with the min/max clump range inputfields controlling the nterval how near and far the objects can be placed from the pivot point and the min/max clumping fields the amount of objects to be placed. The objects will also be placed with raycasting if the mode requires it, overlap checks if enabled and region checks, but will not check if the object is in the neighbourhood of other objects. The created objects by the clumping algorithm are also not taken into consideration when doing the in neighbourhood check for the Poisson samples.
+\par
+The  \textbf{other settings} are the same as the second part of the Poisson foldout \bracket{\ref{subsec:pdd_p}}.
+\scalegraphics[0.6]{Clumping.png}{Distribution with clumping.}
+
+\newpage
+\subsection{Buttons}\label{subsec:pdd_b}
+At the bottom of the UI the errors are shown and the buttons.
+\par
+The first four buttons are for triggering the distribution.
+\begin{itemize}
+\item \textbf{\bracket{0 - current level}}
+\item \textbf{\bracket{current level}}
+\item \textbf{\bracket{current level - last level}}
+\item \textbf{\bracket{0 - last level}}
+\end{itemize}
+The buttons will be disabled when a level in the interval is not in a valid state, or a level before the start of the interval hasn't been distributed yet.
+\par
+The two apply buttons only exists in the EditorWindow. They are enabled when the levels of the interval are distributed, and contains a none applied level. When applying a level you can no longer change the settings inside the Mode foldout, redistribute the applied level. and insert a new level before it.
+\begin{itemize}
+\item \textbf{\bracket{0 - current level}}
+\item \textbf{\bracket{0 - highest distributed level}}
+\end{itemize}
+
+The \textbf{\bracket{Clear Unapplied Levels}} button will clear all the placed objects which are from a unapplied level. The \textbf{\bracket{Reset Settings}} button will reset all the settings back to their default value and destroy all the objects of the unapplied levels.
+\scalegraphics[0.6]{Buttons.png}{Buttons.}
+
+\newpage
+\bibliography{References}{}
+\bibliographystyle{alpha}
+\end{document}

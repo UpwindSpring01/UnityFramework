@@ -302,7 +302,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                                 return !toCloseToProcess;
                             }
                             objectPlaced = true;
-                            GameObject obj = Object.Instantiate(newObject, null);
+                            GameObject obj = (GameObject)PrefabUtility.InstantiatePrefab(newObject);
                             obj.transform.position = pos;
                             obj.transform.rotation = rot;
                             obj.transform.localScale = scale;

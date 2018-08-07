@@ -317,6 +317,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                         EditorData.PlacedObjects.RemoveAt(UIData.SelectedLevelIndex);
 
                         UIData.SelectedLevelIndex = Mathf.Min(Data.Count - 1, UIData.SelectedLevelIndex);
+                        UIData.InsertLevelAt = Mathf.Min(Data.Count, UIData.InsertLevelAt);
                         SelectedData = Data[UIData.SelectedLevelIndex];
                     }
                 }
@@ -669,7 +670,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
         private bool CreateDistributionButtons(float halfWidth, EditorGUI.ChangeCheckScope changeScope)
         {
-            bool resetted = false;
+            bool needSaving = false;
             GUILayout.Label("", GUI.skin.horizontalSlider);
 
             EditorGUILayout.BeginVertical(RowStyle, GUILayout.MaxWidth(halfWidth * 2 + ColumnGap));
@@ -739,6 +740,8 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     if (GUILayout.Button(new GUIContent("Apply [0 - " + UIData.SelectedLevelIndex + "]"), ButtonStyle))
                     {
                         SetReadOnly(UIData.SelectedLevelIndex);
+                        UIData.InsertLevelAt = Mathf.Max(Data.Count, UIData.SelectedLevelIndex + 1);
+                        needSaving = true;
                     }
                 }
                 using (new EditorGUI.DisabledScope(EditorData.HighestDistributedLevel == -1 || EditorData.Grids[EditorData.HighestDistributedLevel].ReadOnly))
@@ -746,6 +749,8 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     if (GUILayout.Button(new GUIContent("Apply [0 - " + EditorData.HighestDistributedLevel + "]"), ButtonStyle))
                     {
                         SetReadOnly(EditorData.HighestDistributedLevel);
+                        UIData.InsertLevelAt = Mathf.Max(Data.Count, EditorData.HighestDistributedLevel + 1);
+                        needSaving = true;
                     }
                 }
             }
@@ -779,7 +784,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 if (GUILayout.Button(new GUIContent("Reset Settings"), ButtonStyle))
                 {
                     Reset(false);
-                    resetted = true;
+                    needSaving = true;
                 }
             }
 
@@ -788,7 +793,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 EditorGUILayout.EndVertical();
                 EditorGUILayout.EndHorizontal();
             }
-            return resetted;
+            return needSaving;
         }
 
         public void Reset(bool loadAndStore = true)
@@ -806,6 +811,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             EditorData.PlacedObjects.Clear();
 
             UIData.SelectedLevelIndex = 0;
+            UIData.InsertLevelAt = 0;
             EditorData.Grids.Add(new StoredGrid());
             EditorData.PlacedObjects.Add(new GameObjectList());
             Data.Add(new PoissonData());

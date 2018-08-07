@@ -65,7 +65,7 @@ namespace Helpers_KevinLoddewykx.General.WeightedArrayCore
 
         public float GetChance(WeightedObject obj)
         {
-            return obj.Weight * (100 / TotalWeight);
+            return obj.Weight * (100.0f / TotalWeight);
         }
         public int GetWeightedElementsCount()
         {
@@ -100,24 +100,26 @@ namespace Helpers_KevinLoddewykx.General.WeightedArrayCore
         public int GetPrevious(int index)
         {
             Debug.Assert(Objects != null, "[WeightedArray: GetPrevious] -> Method called when array is null");
+            int i = index;
             do
             {
-                --index;
-                if (index == -1)
+                --i;
+                if (i == -1)
                 {
-                    index = Objects.Count - 1;
+                    i = Objects.Count - 1;
                 }
-            } while (!_allowNull && Objects[index].Object == null);
+            } while (index != i && !_allowNull && Objects[i].Object == null);
             return index;
         }
 
         public int GetNext(int index)
         {
             Debug.Assert(Objects != null, "[WeightedArray: GetNext] -> Method called when array is null");
+            int i = index;
             do
             {
-                index = (index + 1) % Objects.Count;
-            } while (!_allowNull && Objects[index].Object == null);
+                i = (i + 1) % Objects.Count;
+            } while (index != i && !_allowNull && Objects[index].Object == null);
             return index;
         }
 

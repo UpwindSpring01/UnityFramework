@@ -24,6 +24,7 @@ namespace Helpers_KevinLoddewykx.General.WeightedArrayCore
                     if(changeScope.changed)
                     {
                         ele.Item1.RecalcTotalWeight();
+                        EditorUtility.SetDirty(weightedData);
                     }
                 }
             }
