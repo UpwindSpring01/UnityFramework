@@ -8,14 +8,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 12ddbdcc295ef0943844ed5a57e510cd, type: 3}
-  m_Name: SmallSphere_WeightedCollection
+  m_Script: {fileID: 11500000, guid: f1b452c89b327224e8d9b2578f4ad393, type: 3}
+  m_Name: Sphere_WeightedCollection
   m_EditorClassIdentifier: 
   _elements:
   - _objects:
-    - Object: {fileID: 1046169861554080, guid: a1541aa148a7a474ead2106666420a7e, type: 2}
+    - Object: {fileID: 1480393257502300, guid: 1d22bc580c62e7444ac61d9bb9ec5607, type: 2}
       Weight: 1
     _totalWeight: 1
-    _allowNull: 1
+    _allowNull: 0
   _names:
-  - Weighted Gameobjects (Allow Empty)
+  - Weighted Gameobjects

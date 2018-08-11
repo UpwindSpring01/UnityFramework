@@ -18,7 +18,6 @@
 
 		Cull Back
 		ZWrite Off
-		BlendOp Add
 		
 		CGPROGRAM
 		// Physically based Standard lighting model, and enable shadows on all light types
@@ -75,7 +74,7 @@
 				if (_UseMap)
 				{
 					c.rgb = tex2D(_MainTex, IN.uv_MainTex).rgb;
-					c.a = _OuterColor.a;
+					c.a = 0.925f;
 				}
 				else
 				{

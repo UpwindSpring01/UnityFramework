@@ -8,7 +8,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
     {
         public void InitVisual(PoissonModeData modeData, PoissonData data, PoissonPlacer placer, bool isWindow, bool refreshTopMaterial)
         {
-            if(!isWindow && HelperVisual && refreshTopMaterial)
+            if (!isWindow && HelperVisual && refreshTopMaterial)
             {
                 // Always create new TopMaterial, because when we copy the placer, we don't want the TopMaterial shared
                 TopMaterial = new Material(TopMaterial);
@@ -42,7 +42,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 }
 
                 HelperVisual = new GameObject();
-                
+
 
                 HelperVisual.transform.parent = parentObj.transform;
 
@@ -56,7 +56,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                 {
                     DeleteHelper = HelperVisual.AddComponent<PoissonDeleteHelper>();
                 }
-                
+
                 RefreshVisual(modeData, data, isWindow);
             }
             if (placer && !isWindow)
@@ -174,8 +174,8 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
             CylinderMesh.subMeshCount = 2;
 
-            CylinderMesh.SetIndices(indicesTop, MeshTopology.Triangles, 0);
-            CylinderMesh.SetIndices(indicesSideBotom, MeshTopology.Triangles, 1);
+            CylinderMesh.SetIndices(indicesSideBotom, MeshTopology.Triangles, 0);
+            CylinderMesh.SetIndices(indicesTop, MeshTopology.Triangles, 1);
 
             EllipseMesh.vertices = vertices;
             EllipseMesh.normals = normals;
@@ -387,7 +387,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             PlaneMesh.uv = BoxMesh.uv;
 
             BoxMesh.subMeshCount = 2;
-            BoxMesh.SetIndices(new int[] { 0, 1, 2, 3, 27, 26, 25, 24 }, MeshTopology.Quads, 0);
+            
             BoxMesh.SetIndices(new int[] {
                                          4, 5, 6, 7,
                                          8, 9, 10, 11,
@@ -398,7 +398,8 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                                          35, 34, 33, 32,
                                          39, 38, 37, 36,
                                          43, 42, 41, 40,
-                                         47, 46, 45, 44 }, MeshTopology.Quads, 1);
+                                         47, 46, 45, 44 }, MeshTopology.Quads, 0);
+            BoxMesh.SetIndices(new int[] { 0, 1, 2, 3, 27, 26, 25, 24 }, MeshTopology.Quads, 1);
 
             PlaneMesh.subMeshCount = 1;
             PlaneMesh.SetIndices(BoxMesh.GetIndices(0), MeshTopology.Quads, 0);
@@ -465,7 +466,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
         public void UpdateVisualMode(PoissonModeData modeData)
         {
-            if(!HelperVisual)
+            if (!HelperVisual)
             {
                 return;
             }
@@ -484,7 +485,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     break;
                 case DistributionMode.ProjectionPlane:
                     MeshFilter.sharedMesh = BoxMesh;
-                    Renderer.sharedMaterials = new Material[] { TopMaterial, FaceMaterial };
+                    Renderer.sharedMaterials = new Material[] { FaceMaterial, TopMaterial };
                     TopMaterial.SetInt("_IsEllipse", 0);
                     break;
                 case DistributionMode.Ellipse:
@@ -494,7 +495,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
                     break;
                 case DistributionMode.ProjectionEllipse:
                     MeshFilter.sharedMesh = CylinderMesh;
-                    Renderer.sharedMaterials = new Material[] { TopMaterial, FaceMaterial };
+                    Renderer.sharedMaterials = new Material[] { FaceMaterial, TopMaterial };
                     TopMaterial.SetInt("_IsEllipse", 1);
                     break;
             }
@@ -502,7 +503,7 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
 
         public void UpdateAllowVisualTransformChanges(bool isWindow)
         {
-            if(!HelperVisual)
+            if (!HelperVisual)
             {
                 return;
             }
@@ -516,11 +517,11 @@ namespace Helpers_KevinLoddewykx.PoissonDiskSampling
             }
             else
             {
-                HelperVisual.hideFlags = HideFlags.DontSave &~HideFlags.NotEditable;
+                HelperVisual.hideFlags = HideFlags.DontSave & ~HideFlags.NotEditable;
                 // Set transform to none, otherwise inspector won't update the values
                 HelperVisual.transform.hideFlags = HideFlags.None;
             }
-            
+
             MeshFilter.hideFlags = HideFlags.HideInInspector | HideFlags.DontSave | HideFlags.NotEditable;
             Renderer.hideFlags = HideFlags.HideInInspector | HideFlags.DontSave | HideFlags.NotEditable;
             if (!isWindow)
